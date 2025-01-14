@@ -61,6 +61,13 @@ const main = async ()=> {
         message: chalk.cyan('Do you want multi-language support?'),
         default: false,
       },
+      {
+          type: 'list',
+          name: 'styleChoice',
+          message: 'Which styling option do you prefer?',
+          choices: ['Pure CSS', 'Tailwind CSS'],
+          default: 'Pure CSS',
+      },
     ]);
 
     // Setup commands
@@ -104,6 +111,37 @@ const main = async ()=> {
       console.log(chalk.green('✨ Multi-language support added!'));
     } else {
       console.log(chalk.yellow('\n⏭️  Skipping multi-language support setup.'));
+    }
+
+    console.log(`Applying your style choice: ${styleChoice}...`);
+
+    if (answers.styleChoice === 'Pure CSS') {
+        console.log('Using Pure CSS...');
+        // Optional: Add logic to configure CSS setup if necessary.
+    } else if (styleChoice === 'Tailwind CSS') {
+        console.log('Setting up Tailwind CSS...');
+        execSync(`cd ${repoName} && pnpm add -D tailwindcss postcss autoprefixer && npx tailwindcss init`, { stdio: 'inherit' });
+
+        // Add basic Tailwind CSS configuration
+        const tailwindConfig = `
+module.exports = {
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+        `;
+        fs.writeFileSync(path.join(repoName, 'tailwind.config.js'), tailwindConfig);
+
+        const tailwindCSS = `
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+        `;
+        fs.writeFileSync(path.join(repoName, 'src', 'index.css'), tailwindCSS);
+
+        console.log('Tailwind CSS setup complete!');
     }
 
     // Initialize a new Git repository
