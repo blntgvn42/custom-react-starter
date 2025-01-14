@@ -81,6 +81,12 @@ const main = async () => {
       process.exit(1);
     }
 
+    const gitFolderPath = path.join(repoName, '.git');
+    if (fs.existsSync(gitFolderPath)) {
+        fs.rmSync(gitFolderPath, { recursive: true, force: true });
+        console.log('Disconnected from the original Git repository.');
+    }
+
     // Handle multi-language support
     if (answers.multiLanguageSupport) {
       console.log('Adding multi-language support...');
@@ -96,6 +102,16 @@ const main = async () => {
       console.log('Multi-language support added!');
     } else {
       console.log('Skipping multi-language support setup.');
+    }
+
+    // Initialize a new Git repository
+    console.log('Initializing a new Git repository...');
+    const gitInitCommand = `cd ${repoName} && git init && git add . && git commit -m "Initial commit"`;
+    const gitInitialized = runCommand(gitInitCommand);
+    if (!gitInitialized) {
+        console.error('Git initialization failed. You may need to initialize it manually.');
+    } else {
+        console.log('Git repository initialized with an initial commit.');
     }
 
     console.log('\n✨ Project setup complete! ✨');
