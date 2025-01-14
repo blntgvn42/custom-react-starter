@@ -49,7 +49,7 @@ const main = async ()=> {
     // Validate command line arguments
     const repoName = process.argv[2];
     if (!repoName) {
-      console.error(chalk.red('Please specify the project name: ') + chalk.yellow('npm create my-app'));
+      console.error(chalk.red('Please specify the project name: ') + chalk.yellow('npx @bulent.guven/custom-react-starter my-app'));
       process.exit(1);
     }
 
