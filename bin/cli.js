@@ -141,9 +141,8 @@ const main = async () => {
     log.step(`Configuring styling: ${styleChoice}`);
     if (styleChoice === "Tailwind CSS") {
       log.info("Installing Tailwind CSS dependencies...");
-      execSync(
-        `cd ${repoName} && pnpm add -D tailwindcss postcss autoprefixer && npx tailwindcss init`,
-        { stdio: "inherit" }
+      runCommand(
+        `cd ${repoName} && pnpm add -D tailwindcss postcss autoprefixer && npx tailwindcss init -p`
       );
 
       // Add Tailwind configuration
