@@ -7,19 +7,22 @@ import inquirer from "inquirer";
 import path from "path";
 
 const log = {
-  info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
+  info: (message) =>
+    console.log(`\n${chalk.blue("ℹ ")}${chalk.cyan(message)}`),
   success: (message) =>
-    console.log(chalk.green("✔ ") + chalk.greenBright(message)),
+    console.log(`\n${chalk.green("✔ ")}${chalk.greenBright(message)}`),
   warning: (message) =>
-    console.log(chalk.yellow("⚠ ") + chalk.yellowBright(message)),
+    console.log(`\n${chalk.yellow("⚠ ")}${chalk.yellowBright(message)}`),
   error: (message) =>
-    console.error(chalk.red("✖ ") + chalk.redBright(message)),
+    console.error(`\n${chalk.red("✖ ")}${chalk.redBright(message)}`),
   title: (message) =>
-    console.log(chalk.magenta("\n🚀 ") + chalk.magentaBright.bold(message)),
+    console.log(
+      `\n\n${chalk.magenta("🚀 ")}${chalk.magentaBright.bold(message)}\n`
+    ),
   step: (message) =>
-    console.log(chalk.blue("\n📌 ") + chalk.blueBright(message)),
+    console.log(`\n\n${chalk.blue("📌 ")}${chalk.blueBright(message)}`),
   command: (message) =>
-    console.log(chalk.gray("  $ ") + chalk.whiteBright(message)),
+    console.log(`\n  ${chalk.gray("$")} ${chalk.whiteBright(message)}`),
 };
 
 const runCommand = (command) => {
@@ -90,6 +93,7 @@ const main = async () => {
     ]);
 
     log.step(`Creating project: ${chalk.bold(repoName)}`);
+    console.log("\n");
 
     // Clone repository
     const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${repoName}`;
@@ -110,6 +114,7 @@ const main = async () => {
       process.exit(1);
     }
     log.success("Dependencies installed successfully");
+    console.log("\n");
 
     // Remove .git folder
     const gitFolderPath = path.join(repoName, ".git");
@@ -183,11 +188,13 @@ module.exports = {
     }
 
     // Final success message
+    console.log("\n");
     log.title("Project Setup Complete!");
-    console.log(chalk.cyan("\nNext steps:"));
+    console.log("\n");
+    console.log(chalk.cyan("Next steps:"));
     log.command(`cd ${repoName}`);
     log.command("pnpm run dev");
-    console.log(); // Empty line for spacing
+    console.log("\n\n");
   } catch (error) {
     if (error instanceof Error) {
       log.error(`Setup failed: ${error.message}`);
