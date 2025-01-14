@@ -52,7 +52,7 @@ const main = async () => {
     }
 
     // Get user preferences
-    const answers = await inquirer.prompt<SetupAnswers>([
+    const answers = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'multiLanguageSupport',
