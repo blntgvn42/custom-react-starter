@@ -5,7 +5,6 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
-import { createI18nConfig } from './i18n-config';
 
 const runCommand = (command) => {
   try {
@@ -19,6 +18,30 @@ const runCommand = (command) => {
     }
     return false;
   }
+};
+
+const createI18nConfig = (projectPath) => {
+  const i18nConfig = `
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import Backend from 'i18next-http-backend';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+i18n
+  .use(Backend)
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    fallbackLng: 'en',
+    debug: true,
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
+export default i18n;
+`;
+  fs.writeFileSync(path.join(projectPath, 'src', 'i18n.ts'), i18nConfig);
 };
 
 const main = async ()=> {
