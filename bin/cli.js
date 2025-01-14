@@ -1,20 +1,36 @@
 #!/usr/bin/env node
 
-import chalk from 'chalk';
-import { execSync } from 'child_process';
-import fs from 'fs';
-import inquirer from 'inquirer';
-import path from 'path';
+import chalk from "chalk";
+import { execSync } from "child_process";
+import fs from "fs";
+import inquirer from "inquirer";
+import path from "path";
+
+const log = {
+  info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
+  success: (message) =>
+    console.log(chalk.green("✔ ") + chalk.greenBright(message)),
+  warning: (message) =>
+    console.log(chalk.yellow("⚠ ") + chalk.yellowBright(message)),
+  error: (message) =>
+    console.error(chalk.red("✖ ") + chalk.redBright(message)),
+  title: (message) =>
+    console.log(chalk.magenta("\n🚀 ") + chalk.magentaBright.bold(message)),
+  step: (message) =>
+    console.log(chalk.blue("\n📌 ") + chalk.blueBright(message)),
+  command: (message) =>
+    console.log(chalk.gray("  $ ") + chalk.whiteBright(message)),
+};
 
 const runCommand = (command) => {
   try {
-    execSync(command, { stdio: 'inherit' });
+    execSync(command, { stdio: "inherit" });
     return true;
   } catch (error) {
     if (error instanceof Error) {
-      console.error(chalk.red(`Error: ${error.message}`));
+      log.error(`Command failed: ${error.message}`);
     } else {
-      console.error(chalk.red('An unknown error occurred'));
+      log.error("An unknown error occurred while running command");
     }
     return false;
   }
@@ -41,134 +57,149 @@ i18n
 
 export default i18n;
 `;
-  fs.writeFileSync(path.join(projectPath, 'src', 'i18n.ts'), i18nConfig);
+  fs.writeFileSync(path.join(projectPath, "src", "i18n.ts"), i18nConfig);
 };
 
-const main = async ()=> {
+const main = async () => {
   try {
+    log.title("Custom React Starter CLI");
+
     // Validate command line arguments
     const repoName = process.argv[2];
     if (!repoName) {
-      console.error(chalk.red('Please specify the project name: ') + chalk.yellow('npx @bulent.guven/custom-react-starter my-app'));
+      log.error("Project name is required!");
+      log.command("npx @bulent.guven/custom-react-starter my-app");
       process.exit(1);
     }
 
-    // Get user preferences
+    // Get user preferences with styled prompts
     const answers = await inquirer.prompt([
       {
-        type: 'confirm',
-        name: 'multiLanguageSupport',
-        message: chalk.cyan('Do you want multi-language support?'),
+        type: "confirm",
+        name: "multiLanguageSupport",
+        message: `${chalk.cyan("🌍")} Do you want multi-language support?`,
         default: false,
       },
       {
-          type: 'list',
-          name: 'styleChoice',
-          message: 'Which styling option do you prefer?',
-          choices: ['Pure CSS', 'Tailwind CSS'],
-          default: 'Pure CSS',
+        type: "list",
+        name: "styleChoice",
+        message: `${chalk.cyan("🎨")} Which styling option do you prefer?`,
+        choices: ["Pure CSS", "Tailwind CSS"],
+        default: "Pure CSS",
       },
     ]);
 
-    // Setup commands
-    const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${repoName}`;
-    const installCommand = `cd ${repoName} && pnpm install`;
+    log.step(`Creating project: ${chalk.bold(repoName)}`);
 
     // Clone repository
-    console.log(chalk.blue(`\n📦 Creating a new React project with the name of ${chalk.bold(repoName)}...`));
+    const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${repoName}`;
+    log.info("Cloning template repository...");
     const checkedOut = runCommand(gitCheckoutCommand);
     if (!checkedOut) {
-      console.error(chalk.red('❌ Failed to clone the repository'));
+      log.error("Failed to clone the repository");
       process.exit(1);
     }
+    log.success("Template repository cloned successfully");
 
     // Install dependencies
-    console.log(chalk.blue('\n🚀 Installing dependencies...'));
-    const installed = runCommand(installCommand);
+    log.step("Setting up project dependencies");
+    log.info("Installing packages...");
+    const installed = runCommand(`cd ${repoName} && pnpm install`);
     if (!installed) {
-      console.error(chalk.red('❌ Failed to install dependencies'));
+      log.error("Failed to install dependencies");
       process.exit(1);
     }
+    log.success("Dependencies installed successfully");
 
-    const gitFolderPath = path.join(repoName, '.git');
+    // Remove .git folder
+    const gitFolderPath = path.join(repoName, ".git");
     if (fs.existsSync(gitFolderPath)) {
       fs.rmSync(gitFolderPath, { recursive: true, force: true });
-      console.log(chalk.green('\n🔄 Disconnected from the original Git repository.'));
+      log.success("Disconnected from template repository");
     }
 
+    const { multiLanguageSupport, styleChoice } = answers;
+
     // Handle multi-language support
-    if (answers.multiLanguageSupport) {
-      console.log(chalk.blue('\n🌐 Adding multi-language support...'));
+    if (multiLanguageSupport) {
+      log.step("Configuring multi-language support");
       const i18nInstallCommand = `cd ${repoName} && pnpm add i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
-      
+
       const i18nInstalled = runCommand(i18nInstallCommand);
       if (!i18nInstalled) {
-        console.error(chalk.red('❌ Failed to install i18n dependencies'));
+        log.error("Failed to install i18n dependencies");
         process.exit(1);
       }
 
       createI18nConfig(repoName);
-      console.log(chalk.green('✨ Multi-language support added!'));
+      log.success("Multi-language support configured successfully");
     } else {
-      console.log(chalk.yellow('\n⏭️  Skipping multi-language support setup.'));
+      log.warning("Skipping multi-language support");
     }
 
-    console.log(`Applying your style choice: ${styleChoice}...`);
+    // Handle styling setup
+    log.step(`Configuring styling: ${styleChoice}`);
+    if (styleChoice === "Tailwind CSS") {
+      log.info("Installing Tailwind CSS dependencies...");
+      execSync(
+        `cd ${repoName} && pnpm add -D tailwindcss postcss autoprefixer && npx tailwindcss init`,
+        { stdio: "inherit" }
+      );
 
-    if (answers.styleChoice === 'Pure CSS') {
-        console.log('Using Pure CSS...');
-        // Optional: Add logic to configure CSS setup if necessary.
-    } else if (styleChoice === 'Tailwind CSS') {
-        console.log('Setting up Tailwind CSS...');
-        execSync(`cd ${repoName} && pnpm add -D tailwindcss postcss autoprefixer && npx tailwindcss init`, { stdio: 'inherit' });
-
-        // Add basic Tailwind CSS configuration
-        const tailwindConfig = `
+      // Add Tailwind configuration
+      const tailwindConfig = `
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {},
   },
   plugins: [],
-};
-        `;
-        fs.writeFileSync(path.join(repoName, 'tailwind.config.js'), tailwindConfig);
+};`;
+      fs.writeFileSync(
+        path.join(repoName, "tailwind.config.js"),
+        tailwindConfig
+      );
 
-        const tailwindCSS = `
+      const tailwindCSS = `
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
-        `;
-        fs.writeFileSync(path.join(repoName, 'src', 'index.css'), tailwindCSS);
+@tailwind utilities;`;
+      fs.writeFileSync(path.join(repoName, "src", "index.css"), tailwindCSS);
 
-        console.log('Tailwind CSS setup complete!');
+      log.success("Tailwind CSS configured successfully");
+    } else {
+      log.info("Using Pure CSS configuration");
     }
 
-    // Initialize a new Git repository
-    console.log(chalk.blue('\n📝 Initializing a new Git repository...'));
+    // Initialize Git repository
+    log.step("Initializing Git repository");
     const gitInitCommand = `cd ${repoName} && git init && git add . && git commit -m "Initial commit"`;
     const gitInitialized = runCommand(gitInitCommand);
     if (!gitInitialized) {
-      console.error(chalk.yellow('⚠️  Git initialization failed. You may need to initialize it manually.'));
+      log.warning(
+        "Git initialization failed. You may need to initialize it manually."
+      );
     } else {
-      console.log(chalk.green('✅ Git repository initialized with an initial commit.'));
+      log.success("Git repository initialized with initial commit");
     }
 
-    console.log(chalk.green('\n🎉 Project setup complete! 🎉'));
-    console.log(chalk.cyan('\nTo get started:'));
-    console.log(chalk.white(`  cd ${chalk.bold(repoName)}`));
-    console.log(chalk.white('  pnpm run dev\n'));
+    // Final success message
+    log.title("Project Setup Complete!");
+    console.log(chalk.cyan("\nNext steps:"));
+    log.command(`cd ${repoName}`);
+    log.command("pnpm run dev");
+    console.log(); // Empty line for spacing
   } catch (error) {
     if (error instanceof Error) {
-      console.error(chalk.red('Setup failed:', error.message));
+      log.error(`Setup failed: ${error.message}`);
     } else {
-      console.error(chalk.red('Setup failed with an unknown error'));
+      log.error("Setup failed with an unknown error");
     }
     process.exit(1);
   }
 };
 
 main().catch((error) => {
-  console.error(chalk.red('Fatal error:', error));
+  log.error(`Fatal error: ${error}`);
   process.exit(1);
 });
