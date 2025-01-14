@@ -54,7 +54,7 @@ const main = async ()=> {
     }
 
     // Get user preferences
-    const answers = await inquirer.prompt<UserAnswers>([
+    const answers = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'multiLanguageSupport',
