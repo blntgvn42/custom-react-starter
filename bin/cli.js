@@ -41,12 +41,11 @@ const createI18nConfig = (projectPath) => {
   const enPath = path.join(localesPath, "en");
   const trPath = path.join(localesPath, "tr");
   const typesPath = path.join(projectPath, "src", "@types");
-  const i18nTypesPath = path.join(typesPath, "i18n.d.ts");
 
   // Klasörleri oluştur
   fs.mkdirSync(enPath, { recursive: true });
   fs.mkdirSync(trPath, { recursive: true });
-  fs.mkdirSync(i18nTypesPath, { recursive: true });
+  fs.mkdirSync(typesPath, { recursive: true });
 
   const enTranslation = `
 {
