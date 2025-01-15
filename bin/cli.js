@@ -24,7 +24,7 @@ const log = {
 
 const runCommand = (command) => {
   try {
-    execSync(command, { stdio: "inherit" });
+    execSync(command, { stdio: "ignore" });
     return true;
   } catch (error) {
     if (error instanceof Error) {
