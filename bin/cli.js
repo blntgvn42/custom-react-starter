@@ -118,7 +118,10 @@ export default i18n;
       if (mainFileContent.includes(pattern)) {
         mainFileContent = mainFileContent.replace(
           pattern,
-          `${pattern}\nimport './i18n'\nimport i18n from './i18n'\nimport { I18nextProvider } from 'react-i18next'`
+          `${pattern}\nimport './i18n'
+          import i18n from './i18n'
+          import { I18nextProvider } from 'react-i18next'
+          `
         );
         replaced = true;
         break;
@@ -129,7 +132,9 @@ export default i18n;
       // Also add the I18nextProvider wrapper
       mainFileContent = mainFileContent.replace(
         "<RouterProvider router={router} />",
-        "<I18nextProvider i18n={i18n}>\n      <RouterProvider router={router} />\n    </I18nextProvider>"
+        `<I18nextProvider i18n={i18n}>
+          <RouterProvider router={router} />
+        </I18nextProvider>`
       );
 
       fs.writeFileSync(mainFilePath, mainFileContent);
