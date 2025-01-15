@@ -7,7 +7,7 @@ import fs from "fs";
 import inquirer from "inquirer";
 import path from "path";
 
-const { version } = await readPackageJson("package.json");
+const { version } = await readPackageJson("../package.json");
 
 const log = {
   info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
