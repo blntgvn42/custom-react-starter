@@ -6,6 +6,8 @@ import fs from "fs";
 import inquirer from "inquirer";
 import path from "path";
 
+import packageJson from "../package.json";
+
 const log = {
   info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
   success: (message) =>
@@ -137,7 +139,7 @@ declare module "i18next" {
 
 const main = async () => {
   try {
-    log.title("Custom React Starter CLI");
+    log.title("Custom React Starter CLI v" + packageJson.version);
 
     // Validate command line arguments
     let repoName = process.argv[2];
