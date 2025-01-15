@@ -103,13 +103,40 @@ export default i18n;
   const mainFilePath = path.join(projectPath, "src", "main.tsx");
   let mainFileContent = fs.readFileSync(mainFilePath, "utf-8");
 
-  if (!mainFileContent.includes('import "./i18n";')) {
-    mainFileContent = mainFileContent.replace(
+  // First, check if i18n is already imported
+  if (!mainFileContent.includes("i18n")) {
+    // Try different possible patterns for the index.css import
+    const patterns = [
+      "import './index.css'",
       "import './index.css';",
-      `import './index.css';\nimport './i18n';`
-    );
-    fs.writeFileSync(mainFilePath, mainFileContent);
-    log.success("Updated main.tsx to include i18n import");
+      'import "./index.css"',
+      'import "./index.css";',
+    ];
+
+    let replaced = false;
+    for (const pattern of patterns) {
+      if (mainFileContent.includes(pattern)) {
+        mainFileContent = mainFileContent.replace(
+          pattern,
+          `${pattern}\nimport './i18n'\nimport i18n from './i18n'\nimport { I18nextProvider } from 'react-i18next'`
+        );
+        replaced = true;
+        break;
+      }
+    }
+
+    if (replaced) {
+      // Also add the I18nextProvider wrapper
+      mainFileContent = mainFileContent.replace(
+        "<RouterProvider router={router} />",
+        "<I18nextProvider i18n={i18n}>\n      <RouterProvider router={router} />\n    </I18nextProvider>"
+      );
+
+      fs.writeFileSync(mainFilePath, mainFileContent);
+      log.success("Updated main.tsx with i18n configuration");
+    } else {
+      log.error("Could not find index.css import in main.tsx");
+    }
   }
 
   const i18nTSConfig = `
