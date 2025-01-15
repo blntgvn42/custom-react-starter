@@ -221,7 +221,7 @@ const main = async () => {
     const pnpmLockFolderPath = path.join(repoName, "pnpm-lock.yaml");
     if (fs.existsSync(pnpmLockFolderPath)) {
       fs.rmSync(pnpmLockFolderPath, { recursive: true, force: true });
-      log.success("Removed pnpm-lock.yaml file");
+      // log.success("Removed pnpm-lock.yaml file");
     }
 
     const { packageManager } = answers;
@@ -241,7 +241,7 @@ const main = async () => {
     const gitFolderPath = path.join(repoName, ".git");
     if (fs.existsSync(gitFolderPath)) {
       fs.rmSync(gitFolderPath, { recursive: true, force: true });
-      log.success("Disconnected from template repository");
+      // log.success("Disconnected from template repository");
     }
 
     const { multiLanguageSupport, styleChoice } = answers;
@@ -249,6 +249,7 @@ const main = async () => {
     // Handle multi-language support
     if (multiLanguageSupport) {
       log.step("Configuring multi-language support");
+      log.info("Installing i18n related dependencies...");
       const i18nInstallCommand = `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
 
       const i18nInstalled = runCommand(i18nInstallCommand);
