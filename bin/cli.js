@@ -42,6 +42,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import Backend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import enTranslation from '../locales/en/translation.json';
+import trTranslation from '../locales/tr/translation.json';
 
 i18n
   .use(Backend)
@@ -50,6 +52,10 @@ i18n
   .init({
     fallbackLng: 'en',
     debug: true,
+    resources: {
+      en: enTranslation,
+      tr: trTranslation,
+    },
     interpolation: {
       escapeValue: false,
     },
@@ -58,6 +64,29 @@ i18n
 export default i18n;
 `;
   fs.writeFileSync(path.join(projectPath, "src", "i18n.ts"), i18nConfig);
+
+  const enTranslation = `
+{
+  "welcome": "Welcome to the React App!",
+  "description": "This is a custom React starter template.",
+  "language": "Language",
+}`;
+
+  const trTranslation = `
+{
+  "welcome": "React Uygulamasına Hoşgeldiniz!",
+  "description": "Bu, özel bir React başlangıç şablonudur.",
+  "language": "Dil",
+}`;
+
+  fs.writeFileSync(
+    path.join(projectPath, "locales", "en", "translation.json"),
+    enTranslation
+  );
+  fs.writeFileSync(
+    path.join(projectPath, "locales", "tr", "translation.json"),
+    trTranslation
+  );
 };
 
 const main = async () => {
