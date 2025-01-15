@@ -7,22 +7,19 @@ import inquirer from "inquirer";
 import path from "path";
 
 const log = {
-  info: (message) =>
-    console.log(`\n${chalk.blue("ℹ ")}${chalk.cyan(message)}`),
+  info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
   success: (message) =>
-    console.log(`\n${chalk.green("✔ ")}${chalk.greenBright(message)}`),
+    console.log(chalk.green("✔ ") + chalk.greenBright(message)),
   warning: (message) =>
-    console.log(`\n${chalk.yellow("⚠ ")}${chalk.yellowBright(message)}`),
+    console.log(chalk.yellow("⚠ ") + chalk.yellowBright(message)),
   error: (message) =>
-    console.error(`\n${chalk.red("✖ ")}${chalk.redBright(message)}`),
+    console.error(chalk.red("✖ ") + chalk.redBright(message)),
   title: (message) =>
-    console.log(
-      `\n\n${chalk.magenta("🚀 ")}${chalk.magentaBright.bold(message)}\n`
-    ),
+    console.log(chalk.magenta("\n🚀 ") + chalk.magentaBright.bold(message)),
   step: (message) =>
-    console.log(`\n\n${chalk.blue("📌 ")}${chalk.blueBright(message)}`),
+    console.log(chalk.blue("\n📌 ") + chalk.blueBright(message)),
   command: (message) =>
-    console.log(`\n  ${chalk.gray("$")} ${chalk.whiteBright(message)}`),
+    console.log(chalk.gray("  $ ") + chalk.whiteBright(message)),
 };
 
 const runCommand = (command) => {
@@ -78,6 +75,13 @@ const main = async () => {
     // Get user preferences with styled prompts
     const answers = await inquirer.prompt([
       {
+        type: "list",
+        name: "packageManager",
+        message: `${chalk.cyan("📦")} Which package manager do you want to use?`,
+        choices: ["npm", "yarn", "pnpm", "bun"],
+        default: "pnpm",
+      },
+      {
         type: "confirm",
         name: "multiLanguageSupport",
         message: `${chalk.cyan("🌍")} Do you want multi-language support?`,
@@ -93,7 +97,6 @@ const main = async () => {
     ]);
 
     log.step(`Creating project: ${chalk.bold(repoName)}`);
-    console.log("\n");
 
     // Clone repository
     const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${repoName}`;
@@ -105,16 +108,25 @@ const main = async () => {
     }
     log.success("Template repository cloned successfully");
 
+    // Remove .git folder
+    const pnpmLockFolderPath = path.join(repoName, "pnpm-lock.yaml");
+    if (fs.existsSync(pnpmLockFolderPath)) {
+      fs.rmSync(pnpmLockFolderPath, { recursive: true, force: true });
+      log.success("Removed pnpm-lock.yaml file");
+    }
+
+    const { packageManager } = answers;
+
     // Install dependencies
     log.step("Setting up project dependencies");
     log.info("Installing packages...");
-    const installed = runCommand(`cd ${repoName} && pnpm install`);
+    const installed = runCommand(`cd ${repoName} && ${packageManager} install`);
+
     if (!installed) {
       log.error("Failed to install dependencies");
       process.exit(1);
     }
     log.success("Dependencies installed successfully");
-    console.log("\n");
 
     // Remove .git folder
     const gitFolderPath = path.join(repoName, ".git");
@@ -128,7 +140,7 @@ const main = async () => {
     // Handle multi-language support
     if (multiLanguageSupport) {
       log.step("Configuring multi-language support");
-      const i18nInstallCommand = `cd ${repoName} && pnpm add i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
+      const i18nInstallCommand = `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
 
       const i18nInstalled = runCommand(i18nInstallCommand);
       if (!i18nInstalled) {
@@ -147,7 +159,7 @@ const main = async () => {
     if (styleChoice === "Tailwind CSS") {
       log.info("Installing Tailwind CSS dependencies...");
       runCommand(
-        `cd ${repoName} && pnpm add -D tailwindcss postcss autoprefixer && npx tailwindcss init -p`
+        `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} -D tailwindcss postcss autoprefixer && npx tailwindcss init -p`
       );
 
       // Add Tailwind configuration
@@ -188,13 +200,11 @@ module.exports = {
     }
 
     // Final success message
-    console.log("\n");
     log.title("Project Setup Complete!");
-    console.log("\n");
-    console.log(chalk.cyan("Next steps:"));
+    console.log(chalk.cyan("\nNext steps:"));
     log.command(`cd ${repoName}`);
-    log.command("pnpm run dev");
-    console.log("\n\n");
+    log.command(`${packageManager} run dev`);
+    console.log(); // Empty line for spacing
   } catch (error) {
     if (error instanceof Error) {
       log.error(`Setup failed: ${error.message}`);
