@@ -37,28 +37,30 @@ const runCommand = (command) => {
 };
 
 const createI18nConfig = (projectPath) => {
+  const localesPath = path.join(projectPath, "locales");
+  const enPath = path.join(localesPath, "en");
+  const trPath = path.join(localesPath, "tr");
+
+  // Klasörleri oluştur
+  fs.mkdirSync(enPath, { recursive: true });
+  fs.mkdirSync(trPath, { recursive: true });
+
   const enTranslation = `
 {
   "welcome": "Welcome to the React App!",
   "description": "This is a custom React starter template.",
-  "language": "Language",
+  "language": "Language"
 }`;
 
   const trTranslation = `
 {
   "welcome": "React Uygulamasına Hoşgeldiniz!",
   "description": "Bu, özel bir React başlangıç şablonudur.",
-  "language": "Dil",
+  "language": "Dil"
 }`;
 
-  fs.writeFileSync(
-    path.join(projectPath, "locales", "en", "translation.json"),
-    enTranslation
-  );
-  fs.writeFileSync(
-    path.join(projectPath, "locales", "tr", "translation.json"),
-    trTranslation
-  );
+  fs.writeFileSync(path.join(enPath, "translation.json"), enTranslation);
+  fs.writeFileSync(path.join(trPath, "translation.json"), trTranslation);
 
   const i18nConfig = `
 import i18n from 'i18next';
