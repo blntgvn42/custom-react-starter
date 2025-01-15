@@ -80,8 +80,16 @@ i18n
     fallbackLng: 'en',
     debug: true,
     resources: {
-      en: enTranslation,
-      tr: trTranslation,
+      en: {
+        translation: {
+          ...enTranslation,
+        },
+      },
+      tr: {
+        translation: {
+          ...trTranslation,
+        },
+      },
     },
     interpolation: {
       escapeValue: false,
@@ -91,6 +99,18 @@ i18n
 export default i18n;
 `;
   fs.writeFileSync(path.join(projectPath, "src", "i18n.ts"), i18nConfig);
+
+  const mainFilePath = path.join(projectPath, "src", "main.tsx");
+  let mainFileContent = fs.readFileSync(mainFilePath, "utf-8");
+
+  if (!mainFileContent.includes('import "./i18n";')) {
+    mainFileContent = mainFileContent.replace(
+      "import './index.css';",
+      `import './index.css';\nimport './i18n';`
+    );
+    fs.writeFileSync(mainFilePath, mainFileContent);
+    log.success("Updated main.tsx to include i18n import");
+  }
 
   const i18nTSConfig = `
 import "i18next";
@@ -120,11 +140,15 @@ const main = async () => {
     log.title("Custom React Starter CLI");
 
     // Validate command line arguments
-    const repoName = process.argv[2];
+    let repoName = process.argv[2];
     if (!repoName) {
       log.error("Project name is required!");
       log.command("npx @bulent.guven/custom-react-starter my-app");
       process.exit(1);
+    }
+
+    if (repoName === ".") {
+      repoName = path.basename(process.cwd());
     }
 
     // Get user preferences with styled prompts
