@@ -95,6 +95,7 @@ const main = async () => {
         default: "Pure CSS",
       },
     ]);
+    const startTime = Date.now();
 
     log.step(`Creating project: ${chalk.bold(repoName)}`);
 
@@ -201,6 +202,12 @@ module.exports = {
 
     // Final success message
     log.title("Project Setup Complete!");
+
+    const endTime = Date.now();
+
+    const elapsedTime = (endTime - startTime) / 1000; // in seconds
+    log.success(`Total execution time: ${elapsedTime.toFixed(2)} seconds`);
+
     console.log(chalk.cyan("\nNext steps:"));
     log.command(`cd ${repoName}`);
     log.command(`${packageManager} run dev`);
