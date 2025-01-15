@@ -89,6 +89,28 @@ i18n
 export default i18n;
 `;
   fs.writeFileSync(path.join(projectPath, "src", "i18n.ts"), i18nConfig);
+
+  const i18nTSConfig = `
+import "i18next";
+import enTranslation from "../../locales/en/translation.json";
+import trTranslation from "../../locales/tr/translation.json";
+
+declare module "i18next" {
+  interface CustomTypeOptions {
+    defaultNS: "en";
+    resources: {
+      en: typeof enTranslation;
+      tr: typeof trTranslation;
+    };
+    keySeparator: ".";
+    supportedLngs: ["en", "tr"];
+  }
+}
+  `;
+  fs.writeFileSync(
+    path.join(projectPath, "src", "@types", "i18n.d.ts"),
+    i18nTSConfig
+  );
 };
 
 const main = async () => {
