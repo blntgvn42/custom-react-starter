@@ -6,7 +6,9 @@ import fs from "fs";
 import inquirer from "inquirer";
 import path from "path";
 
-import packageJson from "../package.json";
+const packageJson = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf-8")
+);
 
 const log = {
   info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
@@ -143,14 +145,10 @@ const main = async () => {
 
     // Validate command line arguments
     let repoName = process.argv[2];
-    if (!repoName) {
+    if (!repoName && repoName === ".") {
       log.error("Project name is required!");
       log.command("npx @bulent.guven/custom-react-starter my-app");
       process.exit(1);
-    }
-
-    if (repoName === ".") {
-      repoName = path.basename(process.cwd());
     }
 
     // Get user preferences with styled prompts
