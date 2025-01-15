@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
+import { readPackageJson } from "@pnpm/read-package-json";
 import chalk from "chalk";
 import { execSync } from "child_process";
 import fs from "fs";
 import inquirer from "inquirer";
 import path from "path";
 
-import { version } from "../package.json";
+const { version } = await readPackageJson("package.json");
 
 const log = {
   info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),

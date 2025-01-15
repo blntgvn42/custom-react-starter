@@ -1,6 +1,6 @@
 {
   "name": "@bulent.guven/custom-react-starter",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "type": "module",
   "bin": "./bin/cli.js",
   "scripts": {
@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pnpm/read-package-json": "^1000.0.2",
     "@tanstack/react-router": "^1.95.6",
     "chalk": "^5.4.1",
     "inquirer": "^12.3.2",
