@@ -1,6 +1,6 @@
 {
   "name": "@bulent.guven/custom-react-starter",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "type": "module",
   "bin": "./bin/cli.js",
   "scripts": {
