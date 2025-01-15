@@ -137,9 +137,7 @@ declare module "i18next" {
 
 const main = async () => {
   try {
-    log.title(
-      "Custom React Starter CLI v" + require("../package.json").version
-    );
+    log.title("Custom React Starter CLI");
 
     // Validate command line arguments
     let repoName = process.argv[2];
