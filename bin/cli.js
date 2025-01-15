@@ -6,9 +6,7 @@ import fs from "fs";
 import inquirer from "inquirer";
 import path from "path";
 
-const packageJson = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf-8")
-);
+import { version } from "../package.json";
 
 const log = {
   info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
@@ -141,7 +139,7 @@ declare module "i18next" {
 
 const main = async () => {
   try {
-    log.title("Custom React Starter CLI v" + packageJson.version);
+    log.title("Custom React Starter CLI v" + version);
 
     // Validate command line arguments
     let repoName = process.argv[2];
