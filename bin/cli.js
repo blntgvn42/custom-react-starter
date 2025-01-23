@@ -269,27 +269,48 @@ const main = async () => {
     if (styleChoice === "Tailwind CSS") {
       log.info("Installing Tailwind CSS dependencies...");
       runCommand(
-        `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} -D tailwindcss postcss autoprefixer && npx tailwindcss init -p`
+        `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} tailwindcss @tailwindcss/vite`
       );
 
+      // ---------------- REMOVED ON TAILWIND V4 ----------------
       // Add Tailwind configuration
-      const tailwindConfig = `
-module.exports = {
-  content: ['./src/**/*.{js,jsx,ts,tsx}'],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-};`;
-      fs.writeFileSync(
-        path.join(repoName, "tailwind.config.js"),
-        tailwindConfig
-      );
+      //       const tailwindConfig = `
+      // module.exports = {
+      //   content: ['./src/**/*.{js,jsx,ts,tsx}'],
+      //   theme: {
+      //     extend: {},
+      //   },
+      //   plugins: [],
+      // };`;
+      //       fs.writeFileSync(
+      //         path.join(repoName, "tailwind.config.js"),
+      //         tailwindConfig
+      //       );
 
-      const tailwindCSS = `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;`;
+      const viteConfigPath = path.join(repoName, "vite.config.ts");
+      if (fs.existsSync(viteConfigPath)) {
+        let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
+
+        if (!viteConfig.includes("@tailwindcss/vite")) {
+          viteConfig = viteConfig.replace(
+            "defineConfig({",
+            `import tailwindcss from '@tailwindcss/vite';\n\ndefineConfig({`
+          );
+
+          viteConfig = viteConfig.replace(
+            "plugins: [",
+            "plugins: [\n    tailwindcss(),"
+          );
+
+          fs.writeFileSync(viteConfigPath, viteConfig);
+          log.success("Added Tailwind CSS to vite.config.ts");
+        } else {
+          log.warning("Tailwind CSS is already included in vite.config.ts");
+        }
+      } else {
+        log.error("vite.config.ts not found, skipping Tailwind setup.");
+      }
+      const tailwindCSS = `@import "tailwindcss";`;
       fs.writeFileSync(path.join(repoName, "src", "index.css"), tailwindCSS);
 
       log.success("Tailwind CSS configured successfully");
