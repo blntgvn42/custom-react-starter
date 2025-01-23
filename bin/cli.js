@@ -3,7 +3,6 @@
 import chalk from "chalk";
 import { execSync } from "child_process";
 import fs from "fs";
-import inquirer from "inquirer";
 import path from "path";
 
 const log = {
@@ -168,189 +167,136 @@ declare module "i18next" {
   );
 };
 
-const main = async () => {
-  try {
-    log.title("Custom React Starter CLI");
+const parseArgs = () => {
+  const args = process.argv.slice(2);
+  const options = {
+    tailwind: false,
+    i18n: false,
+    projectName: '',
+  };
 
-    // Validate command line arguments
-    let repoName = process.argv[2];
-    if (!repoName && repoName === ".") {
-      log.error("Project name is required!");
-      log.command("npx @bulent.guven/custom-react-starter my-app");
-      process.exit(1);
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--tailwind') {
+      options.tailwind = true;
+    } else if (arg === '--i18') {
+      options.i18n = true;
+    } else if (!arg.startsWith('--')) {
+      options.projectName = arg;
     }
+  }
 
-    // Get user preferences with styled prompts
-    const answers = await inquirer.prompt([
-      {
-        type: "list",
-        name: "packageManager",
-        message: `${chalk.cyan("📦")} Which package manager do you want to use?`,
-        choices: ["npm", "yarn", "pnpm", "bun"],
-        default: "pnpm",
-      },
-      {
-        type: "confirm",
-        name: "multiLanguageSupport",
-        message: `${chalk.cyan("🌍")} Do you want multi-language support?`,
-        default: false,
-      },
-      {
-        type: "list",
-        name: "styleChoice",
-        message: `${chalk.cyan("🎨")} Which styling option do you prefer?`,
-        choices: ["Pure CSS", "Tailwind CSS"],
-        default: "Pure CSS",
-      },
-    ]);
-    const startTime = Date.now();
+  return options;
+};
 
-    log.step(`Creating project: ${chalk.bold(repoName)}`);
-
-    // Clone repository
-    const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${repoName}`;
-    log.info("Cloning template repository...");
-    const checkedOut = runCommand(gitCheckoutCommand);
-    if (!checkedOut) {
-      log.error("Failed to clone the repository");
-      process.exit(1);
-    }
-    log.success("Template repository cloned successfully");
-
-    // Remove .git folder
-    const pnpmLockFolderPath = path.join(repoName, "pnpm-lock.yaml");
-    if (fs.existsSync(pnpmLockFolderPath)) {
-      fs.rmSync(pnpmLockFolderPath, { recursive: true, force: true });
-      // log.success("Removed pnpm-lock.yaml file");
-    }
-
-    const { packageManager } = answers;
-
-    // Install dependencies
-    log.step("Setting up project dependencies");
-    log.info("Installing packages...");
-    const installed = runCommand(`cd ${repoName} && ${packageManager} install`);
-
-    if (!installed) {
-      log.error("Failed to install dependencies");
-      process.exit(1);
-    }
-    log.success("Dependencies installed successfully");
-
-    // Remove .git folder
-    const gitFolderPath = path.join(repoName, ".git");
-    if (fs.existsSync(gitFolderPath)) {
-      fs.rmSync(gitFolderPath, { recursive: true, force: true });
-      // log.success("Disconnected from template repository");
-    }
-
-    const { multiLanguageSupport, styleChoice } = answers;
-
-    // Handle multi-language support
-    if (multiLanguageSupport) {
-      log.step("Configuring multi-language support");
-      log.info("Installing i18n related dependencies...");
-      const i18nInstallCommand = `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
-
-      const i18nInstalled = runCommand(i18nInstallCommand);
-      if (!i18nInstalled) {
-        log.error("Failed to install i18n dependencies");
-        process.exit(1);
-      }
-
-      createI18nConfig(repoName);
-      log.success("Multi-language support configured successfully");
-    } else {
-      log.warning("Skipping multi-language support");
-    }
-
-    // Handle styling setup
-    log.step(`Configuring styling: ${styleChoice}`);
-    if (styleChoice === "Tailwind CSS") {
-      log.info("Installing Tailwind CSS dependencies...");
-      runCommand(
-        `cd ${repoName} && ${packageManager === "npm" ? "npm install " : `${packageManager} add`} tailwindcss @tailwindcss/vite`
-      );
-
-      // ---------------- REMOVED ON TAILWIND V4 ----------------
-      // Add Tailwind configuration
-      //       const tailwindConfig = `
-      // module.exports = {
-      //   content: ['./src/**/*.{js,jsx,ts,tsx}'],
-      //   theme: {
-      //     extend: {},
-      //   },
-      //   plugins: [],
-      // };`;
-      //       fs.writeFileSync(
-      //         path.join(repoName, "tailwind.config.js"),
-      //         tailwindConfig
-      //       );
-
-      const viteConfigPath = path.join(repoName, "vite.config.ts");
-      if (fs.existsSync(viteConfigPath)) {
-        let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
-
-        if (!viteConfig.includes("@tailwindcss/vite")) {
-          viteConfig = viteConfig.replace(
-            "export default defineConfig({",
-            `import tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({`
-          );
-
-          viteConfig = viteConfig.replace(
-            "plugins: [",
-            "plugins: [\n    tailwindcss(),"
-          );
-
-          fs.writeFileSync(viteConfigPath, viteConfig);
-          log.success("Added Tailwind CSS to vite.config.ts");
-        } else {
-          log.warning("Tailwind CSS is already included in vite.config.ts");
-        }
-      } else {
-        log.error("vite.config.ts not found, skipping Tailwind setup.");
-      }
-      const tailwindCSS = `@import "tailwindcss";`;
-      fs.writeFileSync(path.join(repoName, "src", "index.css"), tailwindCSS);
-
-      log.success("Tailwind CSS configured successfully");
-    } else {
-      log.info("Using Pure CSS configuration");
-    }
-
-    // Initialize Git repository
-    log.step("Initializing Git repository");
-    const gitInitCommand = `cd ${repoName} && git init && git add . && git commit -m "Initial commit"`;
-    const gitInitialized = runCommand(gitInitCommand);
-    if (!gitInitialized) {
-      log.warning(
-        "Git initialization failed. You may need to initialize it manually."
-      );
-    } else {
-      log.success("Git repository initialized with initial commit");
-    }
-
-    // Final success message
-    log.title("Project Setup Complete!");
-
-    const endTime = Date.now();
-
-    const elapsedTime = (endTime - startTime) / 1000; // in seconds
-    log.success(`Total execution time: ${elapsedTime.toFixed(2)} seconds`);
-
-    console.log(chalk.cyan("\nNext steps:"));
-    log.command(`cd ${repoName}`);
-    log.command(`${packageManager} run dev`);
-    console.log(); // Empty line for spacing
-  } catch (error) {
-    if (error instanceof Error) {
-      log.error(`Setup failed: ${error.message}`);
-    } else {
-      log.error("Setup failed with an unknown error");
-    }
+async function main() {
+  log.title("Custom React Starter");
+  
+  const options = parseArgs();
+  
+  if (!options.projectName) {
+    log.error("Please provide a project name");
+    log.info("Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18]");
     process.exit(1);
   }
-};
+
+  const projectPath = path.join(process.cwd(), options.projectName);
+
+  if (fs.existsSync(projectPath)) {
+    log.error(`The directory ${options.projectName} already exists.`);
+    process.exit(1);
+  }
+
+  log.step(`Creating a new React app in ${chalk.green(projectPath)}`);
+
+  const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${options.projectName}`;
+  const installDepsCommand = `cd ${options.projectName} && pnpm install`;
+
+  log.info("Downloading files...");
+  const checkedOut = runCommand(gitCheckoutCommand);
+  if (!checkedOut) process.exit(1);
+
+  log.info("Installing dependencies...");
+  const installedDeps = runCommand(installDepsCommand);
+  if (!installedDeps) process.exit(1);
+
+  if (options.tailwind) {
+    log.step("Setting up Tailwind CSS...");
+    const tailwindCommand = `cd ${options.projectName} && pnpm add -D tailwindcss @tailwindcss/vite`;
+    const installedTailwind = runCommand(tailwindCommand);
+    if (!installedTailwind) process.exit(1);
+    
+    // --------------------- TAILWIND V4 REMOVED ---------------------
+    // Configure Tailwind CSS
+    //     const tailwindConfig = path.join(projectPath, 'tailwind.config.js');
+    //     fs.writeFileSync(tailwindConfig, `
+    // /** @type {import('tailwindcss').Config} */
+    // module.exports = {
+    //   content: [
+    //     "./src/**/*.{js,jsx,ts,tsx}",
+    //   ],
+    //   theme: {
+    //     extend: {},
+    //   },
+    //   plugins: [],
+    // }
+    //     `);
+
+    // Add Tailwind directives to index.css
+    const indexCssPath = path.join(projectPath, 'src', 'index.css');
+    fs.writeFileSync(indexCssPath, `@import "tailwindcss";`);
+
+    log.info("Updating vite.config.ts to include Tailwind CSS...");
+
+  // 📌 Modify vite.config.ts to include Tailwind plugin
+  const viteConfigPath = path.join(repoName, "vite.config.ts");
+  if (fs.existsSync(viteConfigPath)) {
+    let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
+
+    if (!viteConfig.includes("@tailwindcss/vite")) {
+      viteConfig = viteConfig.replace(
+        "export default defineConfig({",
+        `import tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({`
+      );
+
+      viteConfig = viteConfig.replace(
+        "plugins: [",
+        "plugins: [\n    tailwindcss(),"
+      );
+
+      fs.writeFileSync(viteConfigPath, viteConfig);
+      log.success("Added Tailwind CSS to vite.config.ts");
+    } else {
+      log.warning("Tailwind CSS is already included in vite.config.ts");
+    }
+  } else {
+    log.error("vite.config.ts not found, skipping Tailwind setup.");
+  }
+
+  log.success("Tailwind CSS configured successfully.");
+  }
+
+  if (options.i18n) {
+    log.step("Setting up i18n...");
+    createI18nConfig(projectPath);
+  }
+
+  // Clean up git
+  fs.rmSync(path.join(projectPath, '.git'), { recursive: true, force: true });
+  runCommand(`cd ${options.projectName} && git init`);
+
+  log.success("Installation completed successfully!");
+  log.info(`Created ${options.projectName} at ${projectPath}`);
+  log.info("Inside that directory, you can run several commands:");
+  log.command("pnpm start");
+  log.info("  Starts the development server.");
+  log.command("pnpm run build");
+  log.info("  Bundles the app into static files for production.");
+  log.info("\nWe suggest that you begin by typing:");
+  log.command(`cd ${options.projectName}`);
+  log.command("pnpm start");
+  log.info("\nHappy hacking!");
+}
 
 main().catch((error) => {
   log.error(`Fatal error: ${error}`);
