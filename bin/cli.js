@@ -329,6 +329,16 @@ async function main() {
   }
 
   if (options.i18n) {
+    log.step("Configuring multi-language support");
+    log.info("Installing i18n related dependencies...");
+    const i18nInstallCommand = `cd ${options.projectName} && ${options.packageManager === "npm" ? "npm install " : `${options.packageManager} add`} i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
+
+    const i18nInstalled = runCommand(i18nInstallCommand);
+    if (!i18nInstalled) {
+      log.error("Failed to install i18n dependencies");
+      process.exit(1);
+    }
+    
     log.step("Setting up i18n...");
     createI18nConfig(projectPath);
   }
