@@ -173,6 +173,7 @@ const parseArgs = () => {
     tailwind: false,
     i18n: false,
     projectName: '',
+    help: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -181,6 +182,8 @@ const parseArgs = () => {
       options.tailwind = true;
     } else if (arg === '--i18') {
       options.i18n = true;
+    } else if (arg === '--help' || arg === '-h') {
+      options.help = true;
     } else if (!arg.startsWith('--')) {
       options.projectName = arg;
     }
@@ -189,16 +192,39 @@ const parseArgs = () => {
   return options;
 };
 
+const showHelp = () => {
+  log.title("Custom React Starter CLI Help");
+  console.log("\nUsage:");
+  log.command("npx @bulent.guven/custom-react-starter <project-name> [options]");
+  
+  console.log("\nOptions:");
+  console.log(chalk.cyan("  --help, -h") + "        Show this help message");
+  console.log(chalk.cyan("  --tailwind") + "        Add Tailwind CSS support");
+  console.log(chalk.cyan("  --i18") + "            Add i18n (internationalization) support");
+  
+  console.log("\nPackage Manager:");
+  console.log("  Uses " + chalk.cyan("pnpm") + " as the default package manager");
+  
+  process.exit(0);
+};
+
 async function main() {
-  log.title("Custom React Starter");
   
   const options = parseArgs();
+  
+  if (options.help) {
+    showHelp();
+    return;
+  }
   
   if (!options.projectName) {
     log.error("Please provide a project name");
     log.info("Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18]");
+    log.info("Run with --help for more information");
     process.exit(1);
   }
+
+  log.title("Custom React Starter");
 
   const projectPath = path.join(process.cwd(), options.projectName);
 
@@ -249,7 +275,7 @@ async function main() {
     log.info("Updating vite.config.ts to include Tailwind CSS...");
 
   // 📌 Modify vite.config.ts to include Tailwind plugin
-  const viteConfigPath = path.join(repoName, "vite.config.ts");
+  const viteConfigPath = path.join(options.projectName, "vite.config.ts");
   if (fs.existsSync(viteConfigPath)) {
     let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
 
