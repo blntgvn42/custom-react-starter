@@ -255,6 +255,19 @@ async function main() {
   const checkedOut = runCommand(gitCheckoutCommand);
   if (!checkedOut) process.exit(1);
 
+  // Update package.json with new project name and version
+  log.info("Updating package.json...");
+  const packageJsonPath = path.join(projectPath, 'package.json');
+  try {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    packageJson.name = options.projectName;
+    packageJson.version = '1.0.0';
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+  } catch (error) {
+    log.error("Failed to update package.json");
+    process.exit(1);
+  }
+
   log.info("Installing dependencies...");
   const installedDeps = runCommand(installDepsCommand);
   if (!installedDeps) process.exit(1);
