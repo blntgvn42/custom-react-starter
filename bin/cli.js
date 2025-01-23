@@ -173,17 +173,27 @@ const parseArgs = () => {
     tailwind: false,
     i18n: false,
     projectName: '',
-    help: false
+    help: false,
+    packageManager: 'pnpm'
   };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--tailwind') {
       options.tailwind = true;
-    } else if (arg === '--i18') {
+    } else if (arg === '--i18n') {
       options.i18n = true;
     } else if (arg === '--help' || arg === '-h') {
       options.help = true;
+    } else if (arg.startsWith('--pm=')) {
+      const pm = arg.split('=')[1];
+      if (['npm', 'pnpm', 'yarn', 'bun'].includes(pm)) {
+        options.packageManager = pm;
+      } else {
+        log.error(`Invalid package manager: ${pm}`);
+        log.info('Supported package managers: npm, pnpm, yarn, bun');
+        process.exit(1);
+      }
     } else if (!arg.startsWith('--')) {
       options.projectName = arg;
     }
@@ -194,16 +204,19 @@ const parseArgs = () => {
 
 const showHelp = () => {
   log.title("Custom React Starter CLI Help");
+  console.log("\nDescription:");
+  log.info("This command line tool helps you create a new React project with the minimum configuration required for a basic web app.");
+
   console.log("\nUsage:");
-  log.command("npx @bulent.guven/custom-react-starter <project-name> [options]");
+  log.command(
+    `${chalk.cyan("npx")} ${chalk.magenta("@bulent.guven/custom-react-starter")} ${chalk.yellow("<project-name>")} ${chalk.green("[options]")}`
+  );
   
   console.log("\nOptions:");
-  console.log(chalk.cyan("  --help, -h") + "        Show this help message");
-  console.log(chalk.cyan("  --tailwind") + "        Add Tailwind CSS support");
-  console.log(chalk.cyan("  --i18") + "            Add i18n (internationalization) support");
-  
-  console.log("\nPackage Manager:");
-  console.log("  Uses " + chalk.cyan("pnpm") + " as the default package manager");
+  console.log(chalk.green("  --help, -h") + "        Show this help message");
+  console.log(chalk.green("  --tailwind") + "        Add Tailwind CSS support");
+  console.log(chalk.green("  --i18n") + "            Add i18n (internationalization) support");
+  console.log(chalk.green("  --pm=<manager>") + "    Specify package manager (npm, pnpm, yarn, bun). Default: pnpm");
   
   process.exit(0);
 };
@@ -219,7 +232,7 @@ async function main() {
   
   if (!options.projectName) {
     log.error("Please provide a project name");
-    log.info("Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18]");
+    log.info("Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18n]");
     log.info("Run with --help for more information");
     process.exit(1);
   }
@@ -236,7 +249,7 @@ async function main() {
   log.step(`Creating a new React app in ${chalk.green(projectPath)}`);
 
   const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${options.projectName}`;
-  const installDepsCommand = `cd ${options.projectName} && pnpm install`;
+  const installDepsCommand = `cd ${options.projectName} && ${options.packageManager} install`;
 
   log.info("Downloading files...");
   const checkedOut = runCommand(gitCheckoutCommand);
@@ -248,7 +261,7 @@ async function main() {
 
   if (options.tailwind) {
     log.step("Setting up Tailwind CSS...");
-    const tailwindCommand = `cd ${options.projectName} && pnpm add -D tailwindcss @tailwindcss/vite`;
+    const tailwindCommand = `cd ${options.projectName} && ${options.packageManager} add -D tailwindcss @tailwindcss/vite`;
     const installedTailwind = runCommand(tailwindCommand);
     if (!installedTailwind) process.exit(1);
     
