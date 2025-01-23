@@ -293,8 +293,8 @@ const main = async () => {
 
         if (!viteConfig.includes("@tailwindcss/vite")) {
           viteConfig = viteConfig.replace(
-            "defineConfig({",
-            `import tailwindcss from '@tailwindcss/vite';\n\ndefineConfig({`
+            "export default defineConfig({",
+            `import tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({`
           );
 
           viteConfig = viteConfig.replace(
