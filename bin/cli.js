@@ -209,10 +209,6 @@ async function main() {
     },
   ]);
 
-  console.log(`Project name: ${projectName}`);
-  console.log(`Package manager: ${pm}`);
-  console.log(`Options: ${JSON.stringify(options, null, 2)}`);
-
   if (!projectName) {
     log.error("Please provide a project name");
     showHelp();
