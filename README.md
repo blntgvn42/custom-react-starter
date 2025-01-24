@@ -1,11 +1,11 @@
 # Custom React Starter
 
-A modern React project starter with optional Tailwind CSS, i18n support, and authentication pages.
+A modern React project starter with an interactive CLI to set up your project with optional features like Tailwind CSS, i18n support, and authentication pages.
 
 ## Quick Start
 
 ```bash
-npx @bulent.guven/custom-react-starter my-app
+npx @bulent.guven/custom-react-starter
 ```
 
 ## Features
@@ -13,39 +13,25 @@ npx @bulent.guven/custom-react-starter my-app
 - 🚀 React + TypeScript setup
 - 🎨 Optional Tailwind CSS integration
 - 🌐 Optional i18n (internationalization) support
-- 🔐 Optional authentication pages (login, register)
-- 📦 Multiple package manager support (npm, pnpm, yarn, bun)
+- 🔐 Optional authentication pages
+- 📦 Multiple package manager support
+- 💻 Interactive CLI interface
 
 ## Usage
 
-```bash
-npx @bulent.guven/custom-react-starter <project-name> [options]
-```
-
-### Options
-
-- `--help, -h`: Show help message
-- `--tailwind`: Add Tailwind CSS support
-- `--i18n`: Add i18n (internationalization) support with English and Turkish translations
-- `--pm=<manager>`: Specify package manager (npm, pnpm, yarn, bun). Default: pnpm
-- `--auth-pages`: Add authentication pages (login, register)
-- `--all, -a`: Enable all features (Tailwind CSS, i18n, auth pages)
-
-### Examples
+Simply run the CLI command and follow the interactive prompts:
 
 ```bash
-# Create a basic project
-npx @bulent.guven/custom-react-starter my-app
-
-# Create a project with Tailwind CSS
-npx @bulent.guven/custom-react-starter my-app --tailwind
-
-# Create a project with all features using yarn
-npx @bulent.guven/custom-react-starter my-app --all --pm=yarn
-
-# Create a project with i18n and auth pages
-npx @bulent.guven/custom-react-starter my-app --i18n --auth-pages
+npx @bulent.guven/custom-react-starter
 ```
+
+You'll be asked to:
+1. Enter your project name
+2. Choose your preferred package manager (npm, pnpm, yarn, or bun)
+3. Select the features you want to include:
+   - Tailwind CSS
+   - i18n (internationalization)
+   - Authentication pages
 
 ## What's Included
 
@@ -54,6 +40,7 @@ npx @bulent.guven/custom-react-starter my-app --i18n --auth-pages
 - Vite for fast development and building
 - TanStack Router for type-safe routing
 - ESLint and Prettier for code quality
+- Git initialization with initial commit
 
 ### Optional Features
 
@@ -61,17 +48,42 @@ npx @bulent.guven/custom-react-starter my-app --i18n --auth-pages
 - Utility-first CSS framework
 - PostCSS configuration
 - Basic styling setup
+- Vite plugin configuration
 
 #### Internationalization (i18n)
 - i18next integration
 - Browser language detection
 - English and Turkish translations
 - Type-safe translations
+- Automatic configuration in main.tsx
 
 #### Authentication Pages
-- Login page
-- Registration page
+- Login page template
+- Registration page template
+- Authentication-specific layout
 - Basic routing setup
+
+## Available Scripts
+
+Once your project is created, you can run:
+
+```bash
+# Start development server
+pnpm start
+
+# Build for production
+pnpm build
+```
+
+## Package Manager Support
+
+The CLI supports multiple package managers:
+- pnpm (default)
+- npm
+- yarn
+- bun
+
+Choose your preferred package manager during project setup.
 
 ## License
 
