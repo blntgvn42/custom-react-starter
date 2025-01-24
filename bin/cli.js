@@ -407,7 +407,7 @@ function RouteComponent() {
   log.info("  Bundles the app into static files for production.");
   log.info("\nWe suggest that you begin by typing:");
   log.command(`cd ${projectName}`);
-  log.command(pm === "npm" ? "npm start" : `${pm} start`);
+  log.command(pm === "npm" ? "npm dev" : `${pm} dev`);
   log.info("\nHappy hacking!");
 }
 
