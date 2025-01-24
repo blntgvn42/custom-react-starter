@@ -268,6 +268,13 @@ async function main() {
     process.exit(1);
   }
 
+   // Delete bin folder
+   const binPath = path.join(process.cwd(), 'bin');
+   if (fs.existsSync(binPath)) {
+     fs.rmSync(binPath, { recursive: true, force: true });
+       log.success("Removed bin folder");
+   }
+
   log.info("Installing dependencies...");
   const installedDeps = runCommand(installDepsCommand);
   if (!installedDeps) process.exit(1);
