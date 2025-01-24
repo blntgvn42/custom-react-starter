@@ -194,6 +194,8 @@ const parseArgs = () => {
       options.i18n = true;
     } else if (arg === "--help" || arg === "-h") {
       options.help = true;
+    } else if (arg === "--auth-pages") {
+      options.authPages = true;
     } else if (arg.startsWith("--pm=")) {
       const pm = arg.split("=")[1];
       if (["npm", "pnpm", "yarn", "bun"].includes(pm)) {
@@ -235,8 +237,12 @@ const showHelp = () => {
       "    Specify package manager (npm, pnpm, yarn, bun). Default: pnpm"
   );
   console.log(
+    chalk.green("  --auth") +
+      "    Add authentication pages (login, register)"
+  );
+  console.log(
     chalk.green("  --all, -a") +
-      "               Add both Tailwind CSS and i18n support"
+      "    Add both Tailwind CSS and i18n support"
   );
 
   process.exit(0);
@@ -252,10 +258,7 @@ async function main() {
 
   if (!options.projectName) {
     log.error("Please provide a project name");
-    log.info(
-      "Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18n]"
-    );
-    log.info("Run with --help for more information");
+    showHelp();
     process.exit(1);
   }
 
