@@ -318,7 +318,7 @@ const initializeGitRepository = (projectPath) => {
 // Main execution flow
 async function main() {
   try {
-    const { projectName, options, packageManager } = await inquirer.prompt([
+    const { projectName, options, packageManager, initializeGit } = await inquirer.prompt([
       {
         type: "input",
         name: "projectName",
@@ -343,6 +343,12 @@ async function main() {
           { name: "Authentication Pages", value: "auth" },
         ],
       },
+      {
+        type: "confirm",
+        name: "initializeGit",
+        message: "Initialize Git repository?",
+        default: false,
+      }
     ]);
 
     const projectPath = path.resolve(projectName);
@@ -394,7 +400,9 @@ async function main() {
     // Cleanup and finalize
     log.step("Finalizing setup...");
     fs.rmSync(path.join(projectPath, ".git"), { recursive: true, force: true });
-    initializeGitRepository(projectPath);
+    if (initializeGit) {
+      initializeGitRepository(projectPath);
+    }
 
     // Show completion message
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
