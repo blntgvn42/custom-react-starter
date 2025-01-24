@@ -401,13 +401,13 @@ function RouteComponent() {
   log.success("Installation completed successfully!");
   log.info(`Created ${projectName} at ${projectPath}`);
   log.info("Inside that directory, you can run several commands:");
-  log.command("pnpm start");
+  log.command(pm === "npm" ? "npm run " : `${pm} dev`);
   log.info("  Starts the development server.");
-  log.command("pnpm run build");
+  log.command(pm === "npm" ? "npm run " : `${pm} build`);
   log.info("  Bundles the app into static files for production.");
   log.info("\nWe suggest that you begin by typing:");
   log.command(`cd ${projectName}`);
-  log.command("pnpm start");
+  log.command(pm === "npm" ? "npm start" : `${pm} start`);
   log.info("\nHappy hacking!");
 }
 

@@ -69,7 +69,7 @@ Once your project is created, you can run:
 
 ```bash
 # Start development server
-pnpm start
+pnpm dev
 
 # Build for production
 pnpm build
