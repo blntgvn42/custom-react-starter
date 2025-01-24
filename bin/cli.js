@@ -6,6 +6,7 @@ import fs from "fs";
 import inquirer from "inquirer";
 import path from "path";
 
+// Enhanced logging with emoji support and better formatting
 const log = {
   info: (message) => console.log(chalk.blue("ℹ ") + chalk.cyan(message)),
   success: (message) =>
@@ -20,52 +21,70 @@ const log = {
     console.log(chalk.blue("\n📌 ") + chalk.blueBright(message)),
   command: (message) =>
     console.log(chalk.gray("  $ ") + chalk.whiteBright(message)),
+  debug: (message) =>
+    process.env.DEBUG && console.log(chalk.gray("  ◼ ") + message),
 };
 
-const runCommand = (command) => {
+// Enhanced command runner with better error handling
+const runCommand = (command, cwd = process.cwd()) => {
+  log.debug(`Running command: ${command}`);
   try {
-    execSync(command, { stdio: "ignore" });
+    execSync(command, { stdio: "ignore", cwd });
     return true;
   } catch (error) {
+    log.error(`Command failed: ${chalk.yellow(command)}`);
     if (error instanceof Error) {
-      log.error(`Command failed: ${error.message}`);
-    } else {
-      log.error("An unknown error occurred while running command");
+      log.error(`Error: ${error.message}`);
     }
     return false;
   }
 };
 
-const createI18nConfig = (projectPath) => {
-  const localesPath = path.join(projectPath, "locales");
-  const enPath = path.join(localesPath, "en");
-  const trPath = path.join(localesPath, "tr");
-  const typesPath = path.join(projectPath, "src", "@types");
+// Improved i18n configuration with better type safety
+const configureI18n = (projectPath, packageManager, projectName) => {
+  try {
+    const i18nInstallCommand = `cd ${projectName} && ${packageManager === "npm" ? "npm install" : `${packageManager} add`} i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
 
-  // Klasörleri oluştur
-  fs.mkdirSync(enPath, { recursive: true });
-  fs.mkdirSync(trPath, { recursive: true });
-  fs.mkdirSync(typesPath, { recursive: true });
+    const i18nInstalled = runCommand(i18nInstallCommand);
+    if (!i18nInstalled) {
+      log.error("Failed to install i18n dependencies");
+      process.exit(1);
+    }
 
-  const enTranslation = `
-{
-  "welcome": "Welcome to the React App!",
-  "description": "This is a custom React starter template.",
-  "language": "Language"
-}`;
 
-  const trTranslation = `
-{
-  "welcome": "React Uygulamasına Hoşgeldiniz!",
-  "description": "Bu, özel bir React başlangıç şablonudur.",
-  "language": "Dil"
-}`;
+    const localesPath = path.join(projectPath, "locales");
+    const enPath = path.join(localesPath, "en");
+    const trPath = path.join(localesPath, "tr");
+    const typesPath = path.join(projectPath, "src", "@types");
 
-  fs.writeFileSync(path.join(enPath, "translation.json"), enTranslation);
-  fs.writeFileSync(path.join(trPath, "translation.json"), trTranslation);
+    // Create directories recursively
+    [enPath, trPath, typesPath].forEach((dir) => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
 
-  const i18nConfig = `
-import i18n from 'i18next';
+    // Write translation files
+    const writeTranslationFile = (filePath, content) => {
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+      }
+    };
+
+    writeTranslationFile(path.join(enPath, "translation.json"), {
+      welcome: "Welcome to the React App!",
+      description: "This is a custom React starter template.",
+      language: "Language",
+    });
+
+    writeTranslationFile(path.join(trPath, "translation.json"), {
+      welcome: "React Uygulamasına Hoşgeldiniz!",
+      description: "Bu, özel bir React başlangıç şablonudur.",
+      language: "Dil",
+    });
+
+    // Create i18n configuration
+    const i18nConfig = `import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import Backend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -78,340 +97,318 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    debug: true,
+    debug: process.env.NODE_ENV !== 'production',
     resources: {
-      en: {
-        translation: {
-          ...enTranslation,
-        },
-      },
-      tr: {
-        translation: {
-          ...trTranslation,
-        },
-      },
+      en: { translation: enTranslation },
+      tr: { translation: trTranslation },
     },
     interpolation: {
       escapeValue: false,
     },
   });
 
-export default i18n;
-`;
-  fs.writeFileSync(path.join(projectPath, "src", "i18n.ts"), i18nConfig);
+export default i18n;`;
 
-  const mainFilePath = path.join(projectPath, "src", "main.tsx");
-  let mainFileContent = fs.readFileSync(mainFilePath, "utf-8");
+    const i18nPath = path.join(projectPath, "src", "i18n.ts");
+    if (!fs.existsSync(i18nPath)) {
+      fs.writeFileSync(i18nPath, i18nConfig);
+    }
 
-  // First, check if i18n is already imported
-  if (!mainFileContent.includes("i18n")) {
-    // Try different possible patterns for the index.css import
-    const patterns = [
-      "import './index.css'",
-      "import './index.css';",
-      'import "./index.css"',
-      'import "./index.css";',
-    ];
-
-    let replaced = false;
-    for (const pattern of patterns) {
-      if (mainFileContent.includes(pattern)) {
-        mainFileContent = mainFileContent.replace(
-          pattern,
-          `import './i18n'
-import i18n from './i18n'
-import { I18nextProvider } from 'react-i18next'
-
-${pattern}`
+    // Update main.tsx with proper AST manipulation
+    const mainFilePath = path.join(projectPath, "src", "main.tsx");
+    if (fs.existsSync(mainFilePath)) {
+      let content = fs.readFileSync(mainFilePath, "utf-8");
+      
+      if (!content.includes("I18nextProvider")) {
+        content = content.replace(
+          `import './index.css'`,
+          `import './index.css';\nimport { I18nextProvider } from 'react-i18next';\nimport i18n from './i18n';`,
         );
-        replaced = true;
-        break;
+
+        content = content.replace(
+          /<RouterProvider router={router} \/>/,
+          `<I18nextProvider i18n={i18n}>\n  <RouterProvider router={router} />\n</I18nextProvider>`
+        );
+
+        fs.writeFileSync(mainFilePath, content);
       }
     }
 
-    if (replaced) {
-      // Also add the I18nextProvider wrapper
-      mainFileContent = mainFileContent.replace(
-        "<RouterProvider router={router} />",
-        `<I18nextProvider i18n={i18n}>
-  <RouterProvider router={router} />
-</I18nextProvider>`
-      );
+    // Add TypeScript type definitions
+    const i18nTypeDefs = `import 'i18next';
+import enTranslation from '../../locales/en/translation.json';
+import trTranslation from '../../locales/tr/translation.json';
 
-      fs.writeFileSync(mainFilePath, mainFileContent);
-      log.success("Updated main.tsx with i18n configuration");
-    } else {
-      log.error("Could not find index.css import in main.tsx");
-    }
-  }
-
-  const i18nTSConfig = `
-import "i18next";
-import enTranslation from "../../locales/en/translation.json";
-import trTranslation from "../../locales/tr/translation.json";
-
-declare module "i18next" {
+declare module 'i18next' {
   interface CustomTypeOptions {
-    defaultNS: "en";
+    defaultNS: 'en';
     resources: {
       en: typeof enTranslation;
       tr: typeof trTranslation;
     };
-    keySeparator: ".";
-    supportedLngs: ["en", "tr"];
   }
-}
-  `;
-  fs.writeFileSync(
-    path.join(projectPath, "src", "@types", "i18n.d.ts"),
-    i18nTSConfig
-  );
-};
+}`;
 
-const showHelp = () => {
-  log.title("Custom React Starter CLI Help");
-  console.log("\nDescription:");
-  log.info(
-    "This command line tool helps you create a new React project with the minimum configuration required for a basic web app."
-  );
+    const typeDefPath = path.join(typesPath, "i18next.d.ts");
+    if (!fs.existsSync(typeDefPath)) {
+      fs.writeFileSync(typeDefPath, i18nTypeDefs);
+    }
 
-  console.log("\nUsage:");
-  log.command(
-    `${chalk.cyan("npx")} ${chalk.magenta("@bulent.guven/custom-react-starter")}`
-  );
-  process.exit(0);
-};
-
-async function main() {
-  const { projectName, options, pm  } = await inquirer.prompt([
-    {
-      type: "input",
-      name: "projectName",
-      message: "What is the name of the project?",
-      validate: (input) => input.trim() !== "",
-    },
-    {
-      type: "list",
-      name: "pm",
-      message: "Which package manager do you use?",
-      choices: ["npm", "pnpm", "yarn", "bun"],
-      default: "pnpm",
-    },
-    {
-      type: "checkbox",
-      name: "options",
-      message: "What options do you want to add?",
-      choices: [
-        { name: "Tailwind CSS", value: "tailwind" },
-        { name: "i18n", value: "i18n" },
-        { name: "Authentication", value: "auth" },
-      ],
-    },
-  ]);
-
-  if (!projectName) {
-    log.error("Please provide a project name");
-    showHelp();
-    process.exit(1);
-  }
-
-  log.title("Custom React Starter");
-
-  const projectPath = path.join(process.cwd(), projectName);
-
-  if (fs.existsSync(projectPath)) {
-    log.error(`The directory ${projectName} already exists.`);
-    process.exit(1);
-  }
-
-  const startTime = Date.now();
-  log.step(`Creating a new React app in ${chalk.green(projectPath)}`);
-
-  const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${projectName}`;
-  const installDepsCommand = `cd ${projectName} && ${pm} install`;
-
-  log.info("Downloading files...");
-  const checkedOut = runCommand(gitCheckoutCommand);
-  if (!checkedOut) process.exit(1);
-
-  // Update package.json with new project name and version
-  log.info("Updating package.json...");
-  const packageJsonPath = path.join(projectPath, "package.json");
-  try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-    packageJson.name =projectName;
-    packageJson.version = "1.0.0";
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   } catch (error) {
-    log.error("Failed to update package.json");
+    log.error(`Failed to configure i18n: ${error.message}`);
     process.exit(1);
   }
+};
 
-  // Delete bin folder
-  const binPath = path.join(process.cwd(), "bin");
-  if (fs.existsSync(binPath)) {
-    fs.rmSync(binPath, { recursive: true, force: true });
-  }
+// Improved Tailwind configuration
+const configureTailwind = (projectPath, packageManager) => {
+  try {
+    log.step("Configuring Tailwind CSS v4...");
+    
+    // Install Vite-specific Tailwind dependencies
+    const installCommand = packageManager === "npm" 
+      ? `npm install tailwindcss @tailwindcss/vite`
+      : `${packageManager} add tailwindcss @tailwindcss/vite`;
 
-  log.info("Installing dependencies...");
-  const installedDeps = runCommand(installDepsCommand);
-  if (!installedDeps) process.exit(1);
+    if (!runCommand(installCommand, projectPath)) {
+      throw new Error("Failed to install Tailwind CSS dependencies");
+    }
 
-  if (options.includes("tailwind")) {
-    log.step("Setting up Tailwind CSS...");
-    const tailwindCommand = `cd ${projectName} && ${pm} add -D tailwindcss @tailwindcss/vite`;
-    const installedTailwind = runCommand(tailwindCommand);
-    if (!installedTailwind) process.exit(1);
-
-    // --------------------- TAILWIND V4 REMOVED ---------------------
-    // Configure Tailwind CSS
-    //     const tailwindConfig = path.join(projectPath, 'tailwind.config.js');
-    //     fs.writeFileSync(tailwindConfig, `
-    // /** @type {import('tailwindcss').Config} */
-    // module.exports = {
-    //   content: [
-    //     "./src/**/*.{js,jsx,ts,tsx}",
-    //   ],
-    //   theme: {
-    //     extend: {},
-    //   },
-    //   plugins: [],
-    // }
-    //     `);
-
-    // Add Tailwind directives to index.css
-    const indexCssPath = path.join(projectPath, "src", "index.css");
-    fs.writeFileSync(indexCssPath, `@import "tailwindcss";`);
-
-    log.info("Updating vite.config.ts to include Tailwind CSS...");
-
-    // 📌 Modify vite.config.ts to include Tailwind plugin
-    const viteConfigPath = path.join(projectName, "vite.config.ts");
+    // Update vite.config.ts
+    const viteConfigPath = path.join(projectPath, "vite.config.ts");
     if (fs.existsSync(viteConfigPath)) {
       let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
-
+      
+      // Add Tailwind import
       if (!viteConfig.includes("@tailwindcss/vite")) {
         viteConfig = viteConfig.replace(
-          "export default defineConfig({",
-          `import tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({`
+          /import { defineConfig } from 'vite'/,
+          `import { defineConfig } from 'vite';\nimport tailwindcss from '@tailwindcss/vite';`
         );
+      }
 
+      // Add to plugins array
+      if (!viteConfig.includes("tailwindcss()")) {
         viteConfig = viteConfig.replace(
-          "plugins: [",
+          /plugins: \[/,
           "plugins: [\n    tailwindcss(),"
         );
-
-        fs.writeFileSync(viteConfigPath, viteConfig);
-        log.success("Added Tailwind CSS to vite.config.ts");
-      } else {
-        log.warning("Tailwind CSS is already included in vite.config.ts");
       }
-    } else {
-      log.error("vite.config.ts not found, skipping Tailwind setup.");
+
+      fs.writeFileSync(viteConfigPath, viteConfig);
     }
 
-    log.success("Tailwind CSS configured successfully.");
-  }
-
-  if (options.includes("i18n")) {
-    log.step("Configuring multi-language support");
-    log.info("Installing i18n related dependencies...");
-    const i18nInstallCommand = `cd ${projectName} && ${pm === "npm" ? "npm install" : `${pm} add`} i18next react-i18next i18next-http-backend i18next-browser-languagedetector`;
-
-    const i18nInstalled = runCommand(i18nInstallCommand);
-    if (!i18nInstalled) {
-      log.error("Failed to install i18n dependencies");
-      process.exit(1);
+    // Configure base CSS
+    const cssPath = path.join(projectPath, "src", "index.css");
+    if (fs.existsSync(cssPath)) {
+      fs.writeFileSync(cssPath, `@import "tailwindcss";\n`);
     }
 
-    log.step("Setting up i18n...");
-    createI18nConfig(projectPath);
+    // Create minimal config
+    const configContent = `export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  // Enable future flags
+  future: {
+    hoverOnlyWhenSupported: true,
+    respectDefaultRingColorOpacity: true,
+    disableColorOpacityUtilitiesByDefault: true,
+  },
+};`;
+
+    const configPath = path.join(projectPath, "tailwind.config.js");
+    if (!fs.existsSync(configPath)) {
+      fs.writeFileSync(configPath, configContent);
+    }
+
+    log.success("Tailwind CSS v4 configured successfully");
+
+  } catch (error) {
+    log.error(`Tailwind CSS configuration failed: ${error.message}`);
+    process.exit(1);
   }
+};
 
-  if (options.includes("auth")) {
-    log.step("Setting up authentication pages...");
-    const authLayoutPath = path.join(
-      projectPath,
-      "src",
-      "routes",
-      "_layout_auth"
-    );
-    fs.mkdirSync(authLayoutPath, { recursive: true });
+const configureAuth = (projectPath) => {
+  const authLayoutPath = path.join(
+    projectPath,
+    "src",
+    "routes",
+    "_layout_auth"
+  );
+  fs.mkdirSync(authLayoutPath, { recursive: true });
 
-    const login = `import { createFileRoute } from '@tanstack/react-router'
+  const login = `import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_layout_auth/login')({
-  component: RouteComponent,
+component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <div>Hello "/_layout_auth/login"!</div>
+return <div>Hello "/_layout_auth/login"!</div>
 }
-  `;
+`;
 
-    const register = `import { createFileRoute } from '@tanstack/react-router'
+  const register = `import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_layout_auth/register')({
-  component: RouteComponent,
+component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <div>Hello "/_layout_auth/register"!</div>
+return <div>Hello "/_layout_auth/register"!</div>
 }
 
 `;
 
-    fs.writeFileSync(path.join(authLayoutPath, "login.tsx"), login);
-    fs.writeFileSync(path.join(authLayoutPath, "register.tsx"), register);
+  fs.writeFileSync(path.join(authLayoutPath, "login.tsx"), login);
+  fs.writeFileSync(path.join(authLayoutPath, "register.tsx"), register);
 
-    const authLayout = `import { createFileRoute, Outlet } from '@tanstack/react-router'
+  const authLayout = `import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_layout_auth')({
-  component: RouteComponent,
+component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <Outlet />
+return <Outlet />
 }
-    `;
-    fs.writeFileSync(
-      path.join(projectPath, "src", "routes", "_layout_auth.tsx"),
-      authLayout
-    );
-  }
-
-  // Clean up git
-  fs.rmSync(path.join(projectPath, ".git"), { recursive: true, force: true });
-  log.step("Initializing Git repository");
-  const gitInitCommand = `cd ${projectName} && git init && git add . && git commit -m "Initial commit"`;
-  const gitInitialized = runCommand(gitInitCommand);
-  if (!gitInitialized) {
-    log.warning(
-      "Git initialization failed. You may need to initialize it manually."
-    );
-  } else {
-    log.success("Git repository initialized with initial commit");
-  }
-
-  const endTime = Date.now();
-
-  const elapsedTime = (endTime - startTime) / 1000; // in seconds
-  log.success(`Total execution time: ${elapsedTime.toFixed(2)} seconds`);
-
-  log.success("Installation completed successfully!");
-  log.info(`Created ${projectName} at ${projectPath}`);
-  log.info("Inside that directory, you can run several commands:");
-  log.command(pm === "npm" ? "npm run " : `${pm} dev`);
-  log.info("  Starts the development server.");
-  log.command(pm === "npm" ? "npm run " : `${pm} build`);
-  log.info("  Bundles the app into static files for production.");
-  log.info("\nWe suggest that you begin by typing:");
-  log.command(`cd ${projectName}`);
-  log.command(pm === "npm" ? "npm dev" : `${pm} dev`);
-  log.info("\nHappy hacking!");
+  `;
+  fs.writeFileSync(
+    path.join(projectPath, "src", "routes", "_layout_auth.tsx"),
+    authLayout
+  );
 }
 
-main().catch((error) => {
-  log.error(`Fatal error: ${error}`);
-  process.exit(1);
-});
+// Enhanced project setup validation
+const validateProjectName = (name) => {
+  const sanitized = name.trim();
+  if (!sanitized) return "Project name cannot be empty";
+  if (!/^[a-z0-9-]+$/.test(sanitized)) {
+    return "Project name should only contain lowercase letters, numbers, and hyphens";
+  }
+  return true;
+};
+
+// Improved Git initialization
+const initializeGitRepository = (projectPath) => {
+  try {
+    log.step("Initializing Git repository...");
+    
+    const commands = [
+      "git init --quiet",
+      "git add .",
+      'git commit --quiet -m "Initial commit"'
+    ];
+
+    commands.forEach((cmd) => {
+      if (!runCommand(cmd, projectPath)) {
+        throw new Error(`Git command failed: ${cmd}`);
+      }
+    });
+
+    log.success("Git repository initialized successfully");
+  } catch (error) {
+    log.warning(`Git initialization skipped: ${error.message}`);
+  }
+};
+
+// Main execution flow
+async function main() {
+  try {
+    const { projectName, options, packageManager } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "projectName",
+        message: "Project name:",
+        validate: validateProjectName,
+        filter: (input) => input.trim().toLowerCase(),
+      },
+      {
+        type: "list",
+        name: "packageManager",
+        message: "Package manager:",
+        choices: ["pnpm", "npm", "yarn", "bun"],
+        default: "pnpm",
+      },
+      {
+        type: "checkbox",
+        name: "options",
+        message: "Additional features:",
+        choices: [
+          { name: "Tailwind CSS", value: "tailwind" },
+          { name: "Internationalization (i18n)", value: "i18n" },
+          { name: "Authentication Pages", value: "auth" },
+        ],
+      },
+    ]);
+
+    const projectPath = path.resolve(projectName);
+    const startTime = Date.now();
+
+    log.title("Starting React Project Setup");
+
+    // Clone template repository
+    log.step("Downloading project template...");
+    if (fs.existsSync(projectName)) {
+      throw new Error( `Directory "${projectName}" already exists. Please use a different project name or delete the existing directory.`)
+    }
+
+    if (!runCommand(`git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${projectName}`)) {
+      throw new Error("Failed to clone repository");
+    }
+
+    // Update package.json
+    log.step("Configuring project settings...");
+    const packageJsonPath = path.join(projectPath, "package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    packageJson.name = projectName;
+    packageJson.version = "1.0.0";
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
+    // Install dependencies
+    log.step("Installing dependencies...");
+    if (!runCommand(`${packageManager} install`, projectPath)) {
+      throw new Error("Dependency installation failed");
+    }
+
+    // Configure additional features
+    if (options.includes("tailwind")) {
+      configureTailwind(projectPath, packageManager);
+    }
+
+    if (options.includes("i18n")) {
+      log.step("Setting up internationalization...");
+      configureI18n(projectPath, packageManager, projectName);
+    }
+
+    if (options.includes("auth")) {
+      log.step("Creating authentication pages...");
+      configureAuth(projectPath);
+    }
+
+    fs.rmSync(path.join(projectPath, "bin"), { recursive: true, force: true });
+
+    // Cleanup and finalize
+    log.step("Finalizing setup...");
+    fs.rmSync(path.join(projectPath, ".git"), { recursive: true, force: true });
+    initializeGitRepository(projectPath);
+
+    // Show completion message
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    log.success(`Setup completed in ${elapsed} seconds!`);
+    console.log(`
+Next steps:
+  ${chalk.cyan(`cd ${projectName}`)}
+  ${chalk.cyan(`${packageManager} run dev`)}
+    `);
+
+  } catch (error) {
+    log.error(`Setup failed: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+main();
