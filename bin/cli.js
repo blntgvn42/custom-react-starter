@@ -172,37 +172,38 @@ const parseArgs = () => {
   const options = {
     tailwind: false,
     i18n: false,
-    projectName: '',
+    projectName: "",
     help: false,
-    packageManager: 'pnpm'
+    packageManager: "pnpm",
+    authPages: false,
   };
 
-  if (args.some(arg => arg.startsWith('--all') || arg.startsWith('-a'))) {
+  if (args.some((arg) => arg.startsWith("--all") || arg.startsWith("-a"))) {
     options.tailwind = true;
     options.i18n = true;
-    options.projectName = args.find(arg => !arg.startsWith('--'));
-
+    options.projectName = args.find((arg) => !arg.startsWith("--"));
+    options.authPages = true;
     return options;
   }
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--tailwind') {
+    if (arg === "--tailwind") {
       options.tailwind = true;
-    } else if (arg === '--i18n') {
+    } else if (arg === "--i18n") {
       options.i18n = true;
-    } else if (arg === '--help' || arg === '-h') {
+    } else if (arg === "--help" || arg === "-h") {
       options.help = true;
-    } else if (arg.startsWith('--pm=')) {
-      const pm = arg.split('=')[1];
-      if (['npm', 'pnpm', 'yarn', 'bun'].includes(pm)) {
+    } else if (arg.startsWith("--pm=")) {
+      const pm = arg.split("=")[1];
+      if (["npm", "pnpm", "yarn", "bun"].includes(pm)) {
         options.packageManager = pm;
       } else {
         log.error(`Invalid package manager: ${pm}`);
-        log.info('Supported package managers: npm, pnpm, yarn, bun');
+        log.info("Supported package managers: npm, pnpm, yarn, bun");
         process.exit(1);
       }
-    } else if (!arg.startsWith('--')) {
+    } else if (!arg.startsWith("--")) {
       options.projectName = arg;
     }
   }
@@ -213,35 +214,47 @@ const parseArgs = () => {
 const showHelp = () => {
   log.title("Custom React Starter CLI Help");
   console.log("\nDescription:");
-  log.info("This command line tool helps you create a new React project with the minimum configuration required for a basic web app.");
+  log.info(
+    "This command line tool helps you create a new React project with the minimum configuration required for a basic web app."
+  );
 
   console.log("\nUsage:");
   log.command(
     `${chalk.cyan("npx")} ${chalk.magenta("@bulent.guven/custom-react-starter")} ${chalk.yellow("<project-name>")} ${chalk.green("[options]")}`
   );
-  
+
   console.log("\nOptions:");
   console.log(chalk.green("  --help, -h") + "        Show this help message");
   console.log(chalk.green("  --tailwind") + "        Add Tailwind CSS support");
-  console.log(chalk.green("  --i18n") + "            Add i18n (internationalization) support");
-  console.log(chalk.green("  --pm=<manager>") + "    Specify package manager (npm, pnpm, yarn, bun). Default: pnpm");
-  console.log(chalk.green("  --all, -a") + "               Add both Tailwind CSS and i18n support");
-  
+  console.log(
+    chalk.green("  --i18n") +
+      "            Add i18n (internationalization) support"
+  );
+  console.log(
+    chalk.green("  --pm=<manager>") +
+      "    Specify package manager (npm, pnpm, yarn, bun). Default: pnpm"
+  );
+  console.log(
+    chalk.green("  --all, -a") +
+      "               Add both Tailwind CSS and i18n support"
+  );
+
   process.exit(0);
 };
 
 async function main() {
-  
   const options = parseArgs();
-  
+
   if (options.help) {
     showHelp();
     return;
   }
-  
+
   if (!options.projectName) {
     log.error("Please provide a project name");
-    log.info("Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18n]");
+    log.info(
+      "Usage: npx create-custom-react-app <project-name> [--tailwind] [--i18n]"
+    );
     log.info("Run with --help for more information");
     process.exit(1);
   }
@@ -255,6 +268,7 @@ async function main() {
     process.exit(1);
   }
 
+  const startTime = Date.now();
   log.step(`Creating a new React app in ${chalk.green(projectPath)}`);
 
   const gitCheckoutCommand = `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${options.projectName}`;
@@ -266,22 +280,22 @@ async function main() {
 
   // Update package.json with new project name and version
   log.info("Updating package.json...");
-  const packageJsonPath = path.join(projectPath, 'package.json');
+  const packageJsonPath = path.join(projectPath, "package.json");
   try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
     packageJson.name = options.projectName;
-    packageJson.version = '1.0.0';
+    packageJson.version = "1.0.0";
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   } catch (error) {
     log.error("Failed to update package.json");
     process.exit(1);
   }
 
-   // Delete bin folder
-   const binPath = path.join(process.cwd(), 'bin');
-   if (fs.existsSync(binPath)) {
-     fs.rmSync(binPath, { recursive: true, force: true });
-   }
+  // Delete bin folder
+  const binPath = path.join(process.cwd(), "bin");
+  if (fs.existsSync(binPath)) {
+    fs.rmSync(binPath, { recursive: true, force: true });
+  }
 
   log.info("Installing dependencies...");
   const installedDeps = runCommand(installDepsCommand);
@@ -292,7 +306,7 @@ async function main() {
     const tailwindCommand = `cd ${options.projectName} && ${options.packageManager} add -D tailwindcss @tailwindcss/vite`;
     const installedTailwind = runCommand(tailwindCommand);
     if (!installedTailwind) process.exit(1);
-    
+
     // --------------------- TAILWIND V4 REMOVED ---------------------
     // Configure Tailwind CSS
     //     const tailwindConfig = path.join(projectPath, 'tailwind.config.js');
@@ -310,37 +324,37 @@ async function main() {
     //     `);
 
     // Add Tailwind directives to index.css
-    const indexCssPath = path.join(projectPath, 'src', 'index.css');
+    const indexCssPath = path.join(projectPath, "src", "index.css");
     fs.writeFileSync(indexCssPath, `@import "tailwindcss";`);
 
     log.info("Updating vite.config.ts to include Tailwind CSS...");
 
-  // 📌 Modify vite.config.ts to include Tailwind plugin
-  const viteConfigPath = path.join(options.projectName, "vite.config.ts");
-  if (fs.existsSync(viteConfigPath)) {
-    let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
+    // 📌 Modify vite.config.ts to include Tailwind plugin
+    const viteConfigPath = path.join(options.projectName, "vite.config.ts");
+    if (fs.existsSync(viteConfigPath)) {
+      let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
 
-    if (!viteConfig.includes("@tailwindcss/vite")) {
-      viteConfig = viteConfig.replace(
-        "export default defineConfig({",
-        `import tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({`
-      );
+      if (!viteConfig.includes("@tailwindcss/vite")) {
+        viteConfig = viteConfig.replace(
+          "export default defineConfig({",
+          `import tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({`
+        );
 
-      viteConfig = viteConfig.replace(
-        "plugins: [",
-        "plugins: [\n    tailwindcss(),"
-      );
+        viteConfig = viteConfig.replace(
+          "plugins: [",
+          "plugins: [\n    tailwindcss(),"
+        );
 
-      fs.writeFileSync(viteConfigPath, viteConfig);
-      log.success("Added Tailwind CSS to vite.config.ts");
+        fs.writeFileSync(viteConfigPath, viteConfig);
+        log.success("Added Tailwind CSS to vite.config.ts");
+      } else {
+        log.warning("Tailwind CSS is already included in vite.config.ts");
+      }
     } else {
-      log.warning("Tailwind CSS is already included in vite.config.ts");
+      log.error("vite.config.ts not found, skipping Tailwind setup.");
     }
-  } else {
-    log.error("vite.config.ts not found, skipping Tailwind setup.");
-  }
 
-  log.success("Tailwind CSS configured successfully.");
+    log.success("Tailwind CSS configured successfully.");
   }
 
   if (options.i18n) {
@@ -353,14 +367,82 @@ async function main() {
       log.error("Failed to install i18n dependencies");
       process.exit(1);
     }
-    
+
     log.step("Setting up i18n...");
     createI18nConfig(projectPath);
   }
 
+  if (options.authPages) {
+    log.step("Setting up authentication pages...");
+    const authLayoutPath = path.join(
+      projectPath,
+      "src",
+      "routes",
+      "_layout_auth"
+    );
+    fs.mkdirSync(authLayoutPath, { recursive: true });
+
+    const login = `import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_layout_auth/login')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <div>Hello "/_layout_auth/login"!</div>
+}
+  `;
+
+    const register = `import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_layout_auth/register')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <div>Hello "/_layout_auth/register"!</div>
+}
+
+`;
+
+    fs.writeFileSync(path.join(authLayoutPath, "login.tsx"), login);
+    fs.writeFileSync(path.join(authLayoutPath, "register.tsx"), register);
+
+    const authLayout = `import { createFileRoute, Outlet } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_layout_auth')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <Outlet />
+}
+    `;
+    fs.writeFileSync(path.join(
+      projectPath,
+      "src",
+      "routes",
+      "_layout_auth.tsx"
+    ), authLayout);
+  }
+
   // Clean up git
-  fs.rmSync(path.join(projectPath, '.git'), { recursive: true, force: true });
-  runCommand(`cd ${options.projectName} && git init`);
+  fs.rmSync(path.join(projectPath, ".git"), { recursive: true, force: true });
+  log.step("Initializing Git repository");
+  const gitInitCommand = `cd ${options.projectName} && git init && git add . && git commit -m "Initial commit"`;
+  const gitInitialized = runCommand(gitInitCommand);
+  if (!gitInitialized) {
+    log.warning(
+      "Git initialization failed. You may need to initialize it manually."
+    );
+  } else {
+    log.success("Git repository initialized with initial commit");
+  }
+
+  const endTime = Date.now();
+
+  const elapsedTime = (endTime - startTime) / 1000; // in seconds
+  log.success(`Total execution time: ${elapsedTime.toFixed(2)} seconds`);
 
   log.success("Installation completed successfully!");
   log.info(`Created ${options.projectName} at ${projectPath}`);
