@@ -177,6 +177,14 @@ const parseArgs = () => {
     packageManager: 'pnpm'
   };
 
+  if (args.some(arg => arg.startsWith('--all') || arg.startsWith('-a'))) {
+    options.tailwind = true;
+    options.i18n = true;
+    options.projectName = args.find(arg => !arg.startsWith('--'));
+
+    return options;
+  }
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--tailwind') {
@@ -217,6 +225,7 @@ const showHelp = () => {
   console.log(chalk.green("  --tailwind") + "        Add Tailwind CSS support");
   console.log(chalk.green("  --i18n") + "            Add i18n (internationalization) support");
   console.log(chalk.green("  --pm=<manager>") + "    Specify package manager (npm, pnpm, yarn, bun). Default: pnpm");
+  console.log(chalk.green("  --all, -a") + "               Add both Tailwind CSS and i18n support");
   
   process.exit(0);
 };
@@ -272,7 +281,6 @@ async function main() {
    const binPath = path.join(process.cwd(), 'bin');
    if (fs.existsSync(binPath)) {
      fs.rmSync(binPath, { recursive: true, force: true });
-       log.success("Removed bin folder");
    }
 
   log.info("Installing dependencies...");
