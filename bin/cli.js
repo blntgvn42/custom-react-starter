@@ -3,7 +3,7 @@
 import chalk from "chalk";
 import { execSync } from "child_process";
 import fs from "fs";
-import inquirer from "inquirer";
+import { checkbox, confirm, input, select } from "@inquirer/prompts";
 import path from "path";
 
 // Enhanced logging with emoji support and better formatting
@@ -23,6 +23,13 @@ const log = {
     console.log(chalk.gray("  $ ") + chalk.whiteBright(message)),
   debug: (message) =>
     process.env.DEBUG && console.log(chalk.gray("  ◼ ") + message),
+};
+
+ // Write translation files
+ const writeTranslationFile = (filePath, content) => {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+  }
 };
 
 // Enhanced command runner with better error handling
@@ -51,7 +58,6 @@ const configureI18n = (projectPath, packageManager, projectName) => {
       process.exit(1);
     }
 
-
     const localesPath = path.join(projectPath, "locales");
     const enPath = path.join(localesPath, "en");
     const trPath = path.join(localesPath, "tr");
@@ -63,13 +69,6 @@ const configureI18n = (projectPath, packageManager, projectName) => {
         fs.mkdirSync(dir, { recursive: true });
       }
     });
-
-    // Write translation files
-    const writeTranslationFile = (filePath, content) => {
-      if (!fs.existsSync(filePath)) {
-        fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
-      }
-    };
 
     writeTranslationFile(path.join(enPath, "translation.json"), {
       welcome: "Welcome to the React App!",
@@ -118,11 +117,11 @@ export default i18n;`;
     const mainFilePath = path.join(projectPath, "src", "main.tsx");
     if (fs.existsSync(mainFilePath)) {
       let content = fs.readFileSync(mainFilePath, "utf-8");
-      
+
       if (!content.includes("I18nextProvider")) {
         content = content.replace(
           `import './index.css'`,
-          `import './index.css';\nimport { I18nextProvider } from 'react-i18next';\nimport i18n from './i18n';`,
+          `import './index.css';\nimport { I18nextProvider } from 'react-i18next';\nimport i18n from './i18n';`
         );
 
         content = content.replace(
@@ -153,7 +152,6 @@ declare module 'i18next' {
     if (!fs.existsSync(typeDefPath)) {
       fs.writeFileSync(typeDefPath, i18nTypeDefs);
     }
-
   } catch (error) {
     log.error(`Failed to configure i18n: ${error.message}`);
     process.exit(1);
@@ -164,11 +162,9 @@ declare module 'i18next' {
 const configureTailwind = (projectPath, packageManager) => {
   try {
     log.step("Configuring Tailwind CSS v4...");
-    
+
     // Install Vite-specific Tailwind dependencies
-    const installCommand = packageManager === "npm" 
-      ? `npm install tailwindcss @tailwindcss/vite`
-      : `${packageManager} add tailwindcss @tailwindcss/vite`;
+    const installCommand = `${packageManager === "npm" ? "npm install" : `${packageManager} add`} tailwindcss @tailwindcss/vite`;
 
     if (!runCommand(installCommand, projectPath)) {
       throw new Error("Failed to install Tailwind CSS dependencies");
@@ -178,7 +174,7 @@ const configureTailwind = (projectPath, packageManager) => {
     const viteConfigPath = path.join(projectPath, "vite.config.ts");
     if (fs.existsSync(viteConfigPath)) {
       let viteConfig = fs.readFileSync(viteConfigPath, "utf-8");
-      
+
       // Add Tailwind import
       if (!viteConfig.includes("@tailwindcss/vite")) {
         viteConfig = viteConfig.replace(
@@ -224,7 +220,6 @@ const configureTailwind = (projectPath, packageManager) => {
     }
 
     log.success("Tailwind CSS v4 configured successfully");
-
   } catch (error) {
     log.error(`Tailwind CSS configuration failed: ${error.message}`);
     process.exit(1);
@@ -280,7 +275,7 @@ return <Outlet />
     path.join(projectPath, "src", "routes", "_layout_auth.tsx"),
     authLayout
   );
-}
+};
 
 // Enhanced project setup validation
 const validateProjectName = (name) => {
@@ -296,11 +291,11 @@ const validateProjectName = (name) => {
 const initializeGitRepository = (projectPath) => {
   try {
     log.step("Initializing Git repository...");
-    
+
     const commands = [
       "git init --quiet",
       "git add .",
-      'git commit --quiet -m "Initial commit"'
+      'git commit --quiet -m "Initial commit"',
     ];
 
     commands.forEach((cmd) => {
@@ -318,38 +313,31 @@ const initializeGitRepository = (projectPath) => {
 // Main execution flow
 async function main() {
   try {
-    const { projectName, options, packageManager, initializeGit } = await inquirer.prompt([
-      {
-        type: "input",
-        name: "projectName",
+    const { projectName, packageManager, options, initializeGit } = {
+      projectName: await input({
         message: "Project name:",
         validate: validateProjectName,
         filter: (input) => input.trim().toLowerCase(),
-      },
-      {
-        type: "list",
-        name: "packageManager",
+      }),
+      packageManager: await select({
         message: "Package manager:",
-        choices: ["pnpm", "npm", "yarn", "bun"],
         default: "pnpm",
-      },
-      {
-        type: "checkbox",
-        name: "options",
+        choices: ["pnpm", "npm", "yarn", "bun"],
+      }),
+      options: await checkbox({
         message: "Additional features:",
+        default: ["tailwind", "i18n", "auth"],
         choices: [
           { name: "Tailwind CSS", value: "tailwind" },
           { name: "Internationalization (i18n)", value: "i18n" },
           { name: "Authentication Pages", value: "auth" },
         ],
-      },
-      {
-        type: "confirm",
-        name: "initializeGit",
+      }),
+      initializeGit: await confirm({
         message: "Initialize Git repository?",
         default: false,
-      }
-    ]);
+      }),
+    };
 
     const projectPath = path.resolve(projectName);
     const startTime = Date.now();
@@ -359,10 +347,16 @@ async function main() {
     // Clone template repository
     log.step("Downloading project template...");
     if (fs.existsSync(projectName)) {
-      throw new Error( `Directory "${projectName}" already exists. Please use a different project name or delete the existing directory.`)
+      throw new Error(
+        `Directory "${projectName}" already exists. Please use a different project name or delete the existing directory.`
+      );
     }
 
-    if (!runCommand(`git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${projectName}`)) {
+    if (
+      !runCommand(
+        `git clone --depth 1 https://github.com/blntgvn42/custom-react-starter ${projectName}`
+      )
+    ) {
       throw new Error("Failed to clone repository");
     }
 
@@ -412,7 +406,6 @@ Next steps:
   ${chalk.cyan(`cd ${projectName}`)}
   ${chalk.cyan(`${packageManager} run dev`)}
     `);
-
   } catch (error) {
     log.error(`Setup failed: ${error.message}`);
     process.exit(1);
