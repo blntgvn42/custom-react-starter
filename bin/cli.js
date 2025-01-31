@@ -244,6 +244,7 @@ return <div>Hello "/_layout_auth/register"!</div>
   fs.writeFileSync(path.join(authLayoutPath, "register.tsx"), register);
 
   const authLayout = `import { createFileRoute, Outlet } from '@tanstack/react-router'
+import React from 'react' 
 
 export const Route = createFileRoute('/_layout_auth')({
 component: RouteComponent,
