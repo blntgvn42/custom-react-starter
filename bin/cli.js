@@ -250,7 +250,12 @@ component: RouteComponent,
 })
 
 function RouteComponent() {
-return <Outlet />
+ return (
+    <React.Fragment>
+      Auth Layout
+      <Outlet />
+    </React.Fragment>
+  )
 }
   `;
   fs.writeFileSync(

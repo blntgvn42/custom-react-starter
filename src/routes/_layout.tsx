@@ -1,9 +1,15 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
+import React from 'react'
 
 export const Route = createFileRoute('/_layout')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <Outlet />
+  return (
+    <React.Fragment>
+      Main Layout
+      <Outlet />
+    </React.Fragment>
+  )
 }
