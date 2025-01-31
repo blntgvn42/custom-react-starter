@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
+import { checkbox, confirm, input, select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { execSync } from "child_process";
 import fs from "fs";
-import { checkbox, confirm, input, select } from "@inquirer/prompts";
 import path from "path";
 
 // Enhanced logging with emoji support and better formatting
@@ -25,8 +25,8 @@ const log = {
     process.env.DEBUG && console.log(chalk.gray("  ◼ ") + message),
 };
 
- // Write translation files
- const writeTranslationFile = (filePath, content) => {
+// Write translation files
+const writeTranslationFile = (filePath, content) => {
   if (!fs.existsSync(filePath)) {
     fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
   }
@@ -198,25 +198,6 @@ const configureTailwind = (projectPath, packageManager) => {
     const cssPath = path.join(projectPath, "src", "index.css");
     if (fs.existsSync(cssPath)) {
       fs.writeFileSync(cssPath, `@import "tailwindcss";\n`);
-    }
-
-    // Create minimal config
-    const configContent = `export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  // Enable future flags
-  future: {
-    hoverOnlyWhenSupported: true,
-    respectDefaultRingColorOpacity: true,
-    disableColorOpacityUtilitiesByDefault: true,
-  },
-};`;
-
-    const configPath = path.join(projectPath, "tailwind.config.js");
-    if (!fs.existsSync(configPath)) {
-      fs.writeFileSync(configPath, configContent);
     }
 
     log.success("Tailwind CSS v4 configured successfully");
