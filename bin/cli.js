@@ -151,6 +151,8 @@ declare module 'i18next' {
     const typeDefPath = path.join(typesPath, "i18next.d.ts");
     if (!fs.existsSync(typeDefPath)) {
       fs.writeFileSync(typeDefPath, i18nTypeDefs);
+
+      log.success("i18n configured successfully");
     }
   } catch (error) {
     log.error(`Failed to configure i18n: ${error.message}`);
@@ -263,6 +265,8 @@ function RouteComponent() {
     path.join(projectPath, "src", "routes", "_layout_auth.tsx"),
     authLayout
   );
+
+  log.success("Auth pages with its layout created successfully");
 };
 
 // Add react-query
@@ -315,6 +319,8 @@ const configureReactQuery = (projectPath, packageManager) => {
       fs.writeFileSync(mainTsx, content);
     }
   }
+
+  log.success("React Query configured successfully");
 }
 
 // Enhanced project setup validation
