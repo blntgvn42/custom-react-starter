@@ -1,6 +1,6 @@
 # Custom React Starter
 
-A modern React project starter with an interactive CLI to set up your project with optional features like Tailwind CSS, i18n support, and authentication pages.
+A modern React project starter with an interactive CLI to set up your project with optional features like Tailwind CSS, i18n support, @tanstack/react-query and authentication pages.
 
 ## Quick Start
 
@@ -14,6 +14,7 @@ npx @bulent.guven/custom-react-starter
 - 🎨 Optional Tailwind CSS integration
 - 🌐 Optional i18n (internationalization) support
 - 🔐 Optional authentication pages
+- 🔄 Optional TanStack Query (React Query) integration
 - 📦 Multiple package manager support
 - 💻 Interactive CLI interface
 
@@ -32,6 +33,7 @@ You'll be asked to:
    - Tailwind CSS
    - i18n (internationalization)
    - Authentication pages
+   - TanStack Query
 
 ## What's Included
 
@@ -62,6 +64,13 @@ You'll be asked to:
 - Registration page template
 - Authentication-specific layout
 - Basic routing setup
+
+#### TanStack Query
+- Powerful data-fetching and state management
+- Automatic background updates
+- Cache management
+- DevTools integration
+- Type-safe queries and mutations
 
 ## Available Scripts
 
