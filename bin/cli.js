@@ -207,6 +207,7 @@ const configureTailwind = (projectPath, packageManager) => {
   }
 };
 
+// Add auth pages
 const configureAuth = (projectPath) => {
   const authLayoutPath = path.join(
     projectPath,
@@ -258,6 +259,58 @@ return <Outlet />
   );
 };
 
+// Add react-query
+const configureReactQuery = (projectPath, packageManager) => {
+  // Install Vite-specific react-query dependencies
+  const installCommand = `${packageManager === "npm" ? "npm install" : `${packageManager} add`} @tanstack/react-query @tanstack/react-query-devtools`;
+
+  if (!runCommand(installCommand, projectPath)) {
+    throw new Error("Failed to install react query dependencies");
+  }
+
+  const rootPath = path.join(projectPath, "src", "routes", "__root.tsx");
+  if (fs.existsSync(rootPath)) {
+    let rootTsx = fs.readFileSync(rootPath, "utf-8");
+    // Add Tailwind import
+    if (!rootTsx.includes("@tanstack/react-query-devtools")) {
+      rootTsx = rootTsx.replace(
+        /import { TanStackRouterDevtools } from '@tanstack\/router-devtools'/,
+        `import { TanStackRouterDevtools } from '@tanstack/router-devtools';\nimport { ReactQueryDevtools } from '@tanstack/react-query-devtools';`
+      );
+    }
+
+
+    if (!rootTsx.includes("<ReactQueryDevtools />")) {
+      rootTsx = rootTsx.replace(
+        /<TanStackRouterDevtools \/>/,
+        `<ReactQueryDevtools />
+      <TanStackRouterDevtools />`
+      );
+    }
+
+    fs.writeFileSync(rootPath, rootTsx);
+  }
+
+  const mainTsx = path.join(projectPath, "src", "main.tsx");
+  if (fs.existsSync(mainTsx)) {
+    let content = fs.readFileSync(mainTsx, "utf-8");
+
+    if (!content.includes("QueryClientProvider")) {
+      content = content.replace(
+        `import { routeTree } from './routeTree.gen'`,
+        `import { routeTree } from './routeTree.gen';\nimport { QueryClient, QueryClientProvider } from '@tanstack/react-query';\nconst queryClient = new QueryClient();`
+      );
+
+      content = content.replace(
+        /<RouterProvider router={router} \/>/,
+        `<QueryClientProvider client={queryClient}>\n  <RouterProvider router={router} />\n</QueryClientProvider>`
+      );
+
+      fs.writeFileSync(mainTsx, content);
+    }
+  }
+}
+
 // Enhanced project setup validation
 const validateProjectName = (name) => {
   const sanitized = name.trim();
@@ -307,11 +360,12 @@ async function main() {
       }),
       options: await checkbox({
         message: "Additional features:",
-        default: ["tailwind", "i18n", "auth"],
+        default: ["tailwind", "i18n", "auth", "reactQuery"],
         choices: [
           { name: "Tailwind CSS", value: "tailwind" },
           { name: "Internationalization (i18n)", value: "i18n" },
           { name: "Authentication Pages", value: "auth" },
+          { name: "React Query", value: "reactQuery" }
         ],
       }),
       initializeGit: await confirm({
@@ -358,6 +412,11 @@ async function main() {
     // Configure additional features
     if (options.includes("tailwind")) {
       configureTailwind(projectPath, packageManager);
+    }
+
+    if (options.includes("reactQuery")) {
+      log.step("Installing react query");
+      configureReactQuery(projectPath, packageManager);
     }
 
     if (options.includes("i18n")) {
